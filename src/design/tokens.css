@@ -1,0 +1,10 @@
+:root {
+  --color-primary: hsl(210, 85%, 45%);
+  --color-primary-dark: hsl(210, 85%, 35%);
+  --color-bg: hsl(0, 0%, 100%);
+  --color-bg-dark: hsl(0, 0%, 10%);
+  --color-text: hsl(0, 0%, 10%);
+  --color-text-dark: hsl(0, 0%, 90%);
+  --spacing-unit: 0.5rem;
+  --font-family: 'Inter', system-ui, sans-serif;
+}
