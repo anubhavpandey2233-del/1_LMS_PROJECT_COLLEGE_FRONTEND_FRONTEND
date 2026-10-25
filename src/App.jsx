@@ -9,6 +9,8 @@ import PrivteRouet from "./router/PrivteRouet.jsx";
 import { SnackbarContent, SnackbarProvider } from "notistack";
 import Alert from "./components/Alert/Alert.jsx";
 import { ThemeProvider } from "./context/ThemeContext.jsx";
+import CourseVideoPlayer from "./container/Course/CourseVideoPlayer.jsx";
+
 // import Product from './container/Product/Product';
 // import Mui from './components/mui';
 // import User from './container/User/User'
@@ -25,6 +27,10 @@ function App() {
 
             {/* <Route element={<PrivteRouet />}> */}
             <Route path="/admin/*" element={<AdminRouet />} />
+            <Route
+              path="/course-video-player/:_id"
+              element={<CourseVideoPlayer />}
+            />
             {/* </Route>   */}
           </Routes>
         </Provider>

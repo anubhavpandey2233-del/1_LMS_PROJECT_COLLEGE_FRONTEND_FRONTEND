@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   Navigation,
@@ -46,29 +47,32 @@ import { useFormik } from "formik";
 
 function CourseDetails(props) {
   const [rating, setRating] = useState();
-
   const params = useParams();
   const navigate = useNavigate();
   const auth = useSelector((state) => state.auth);
-  console.log("checklogin", auth?.user?.data);
 
   const { data, isLoading } = useGetallcourseQuery();
-
   const { data: section } = useGetAllSectionQuery();
-
   const { data: content } = useGetcontentQuery();
 
-  const filerdata = data?.data?.find((v) => v._id === params._id);
+  console.log("URL ID:", params._id);
+  console.log("Sections:", section?.data);
+  console.log("Content:", content?.data);
+
+  console.log("checklogin", auth?.user?.data);
+
+  const filerdata = data?.data?.find(
+    (v) => String(v._id) === String(params._id)
+  );
   console.log("course data", filerdata);
 
-  const sectiondata = section?.data?.filter((v) => v.course_id === params._id) || [];
-  console.log("sectionnnnnnnnnnnnnn", sectiondata);
+  const sectiondata =
+    section?.data?.filter(
+      (v) =>
+        String(v.course_id?._id ?? v.course_id) === String(params._id)
+    ) || [];
 
-
-
-  if (isLoading) {
-    return <div className="text-center py-5">Loading...</div>;
-  }
+  console.log("Filtered sections:", sectiondata);
 
   const { data: Cart } = useGetcartQuery();
   console.log("cart", Cart?.data);
@@ -82,7 +86,9 @@ function CourseDetails(props) {
     if (!userId || !product?._id) return;
 
     const pendingCart = Cart?.data?.find(
-      (cart) => cart?.user_id === userId && cart?.status === "pending",
+      (cart) =>
+        String(cart?.user_id?._id ?? cart?.user_id) === String(userId) &&
+        cart?.status === "pending"
     );
 
     const newItem = {
@@ -91,7 +97,9 @@ function CourseDetails(props) {
     };
 
     const productExist = pendingCart?.items?.some(
-      (item) => item?.course_id === product._id,
+      (item) =>
+        String(item?.course_id?._id ?? item?.course_id) ===
+        String(product._id)
     );
 
     if (productExist) {
@@ -116,60 +124,72 @@ function CourseDetails(props) {
   };
 
   const { data: payment } = useGetpaymentQuery();
-
   console.log("payment", payment?.data);
 
-  const PaymentUser = payment?.data?.filter(
-    (v) => v?.user_id === auth?.user?.data?._id,
+  const PaymentUser = (payment?.data || []).filter(
+    (item) =>
+      String(item?.user_id?._id ?? item?.user_id) ===
+      String(auth?.user?.data?._id)
   );
 
-  console.log("PaymentUser", PaymentUser);
-
-  const purCart = Cart?.data?.find((v) =>
-    PaymentUser?.map((v1) => v1?.cart_id === v?._id),
+  const purCart = (Cart?.data || []).find((cart) =>
+    PaymentUser.some(
+      (paymentItem) =>
+        String(paymentItem?.cart_id?._id ?? paymentItem?.cart_id) ===
+          String(cart?._id) &&
+        paymentItem?.status === "completed"
+    )
   );
-  console.log("purched cart", purCart);
 
-  const Pay_Course = purCart?.items?.some(
-    (v) =>
-      v?.course_id === params._id && PaymentUser[0]?.status === "completed",
+  const Pay_Course = Boolean(
+    purCart?.items?.some(
+      (item) =>
+        String(item?.course_id?._id ?? item?.course_id) ===
+        String(params._id)
+    )
   );
-  console.log(Pay_Course);
 
   const { data: progress } = useGetAllprogessQuery();
+  console.log("Progress:", progress?.data);
 
-  console.log(progress);
-
-  const findProgress = progress?.data?.find((v) => v.content_id === params._id);
-
-  console.log(findProgress);
+  const findProgress = progress?.data?.find(
+    (v) => String(v.content_id?._id ?? v.content_id) === String(params._id)
+  );
+  console.log("Found progress:", findProgress);
 
   const [addProgress] = useAddprogessMutation();
   const [updateProgress] = useUpdateprogessMutation();
 
   const { data: enrollment } = useGetenrollmentQuery();
-
-  console.log(enrollment);
+  console.log("Enrollment:", enrollment?.data);
 
   const [updateEnroll] = useUpdateenrollmentMutation();
 
   const Enroll_USER = enrollment?.data?.find(
-    (v) => v?.user_id === auth?.user?.data?._id,
+    (v) =>
+      String(v?.user_id?._id ?? v?.user_id) ===
+      String(auth?.user?.data?._id)
   );
 
   const Enroll_id = Enroll_USER?._id;
 
-  const sortedSections = sectiondata
-    ? [...sectiondata].sort((a, b) => (a.order || 0) - (b.order || 0))
-    : [];
+  const sortedSections = [...sectiondata].sort(
+    (a, b) => (a.order || 0) - (b.order || 0)
+  );
+
   const orderedLectures = [];
 
   sortedSections.forEach((sec) => {
     const secLectures =
-      content?.data?.filter((c) => c.section_id === sec._id) || [];
+      content?.data?.filter(
+        (c) =>
+          String(c.section_id?._id ?? c.section_id) === String(sec._id)
+      ) || [];
+
     const sortedSecLectures = [...secLectures].sort(
-      (a, b) => (a.order || 0) - (b.order || 0),
+      (a, b) => (a.order || 0) - (b.order || 0)
     );
+
     orderedLectures.push(...sortedSecLectures);
   });
 
@@ -177,43 +197,58 @@ function CourseDetails(props) {
 
   const lecturesWithCompletion = orderedLectures.map((cn) => {
     const file = cn.content_file?.[0];
+
     const isCompleted = progress?.data?.find(
       (p) =>
-        (p.content_id === cn._id || (file?._id && p.content_id === file._id)) &&
-        p.enrollment_id === Enroll_id,
+        (
+          String(p.content_id?._id ?? p.content_id) === String(cn._id) ||
+          (file?._id &&
+            String(p.content_id?._id ?? p.content_id) === String(file._id))
+        ) &&
+        String(p.enrollment_id?._id ?? p.enrollment_id) ===
+          String(Enroll_id)
     );
-    const complete = isCompleted?.is_completed || false;
+
     return {
       ...cn,
-      complete,
+      complete: isCompleted?.is_completed || false,
     };
   });
 
   const completedLecturesCount = lecturesWithCompletion.filter(
-    (l) => l.complete,
+    (l) => l.complete
   ).length;
+
   const courseProgressPercentage =
     totalLecturesCount > 0
-      ? Math.round((completedLecturesCount / totalLecturesCount) * 100)
+      ? Math.round(
+          (completedLecturesCount / totalLecturesCount) * 100
+        )
       : 0;
 
   const firstIncompleteLecture = lecturesWithCompletion.find(
-    (l) => !l.complete,
+    (l) => !l.complete
   );
 
   const firstIncompleteLectureId = firstIncompleteLecture?._id;
   const firstLectureId = lecturesWithCompletion[0]?._id;
+
   const [videoDur, setvideoTotalDuration] = useState({});
 
-  const existingProgressIndex = Enroll_USER?.progress?.findIndex(
-    (p) => p.course_id === filerdata?._id,
+  const enrollmentProgress = Array.isArray(Enroll_USER?.progress)
+    ? Enroll_USER.progress
+    : [];
+
+  const existingProgressIndex = enrollmentProgress.findIndex(
+    (p) => String(p?.course_id?._id ?? p?.course_id) === String(filerdata?._id)
   );
 
   let updatedProgress = [];
 
+
   if (existingProgressIndex !== -1) {
-    updatedProgress = Enroll_USER?.progress?.map((p) => {
-      if (p?.course_id === filerdata?._id) {
+    updatedProgress = enrollmentProgress.map((p, index) => {
+      if (index === existingProgressIndex) {
         return {
           ...p,
           percentage: courseProgressPercentage,
@@ -226,7 +261,7 @@ function CourseDetails(props) {
     });
   } else {
     updatedProgress = [
-      ...(Enroll_USER?.progress || []),
+      ...enrollmentProgress,
       {
         course_id: filerdata?._id,
         percentage: courseProgressPercentage,
@@ -671,7 +706,7 @@ Page content START */}
                                 data-bs-toggle="collapse"
                                 data-bs-target={"#collapse-" + i}
                                 aria-expanded="true"
-                                aria-controls={"#collapse-" + i}
+                                aria-controls={"collapse-" + i}
                               >
                                 {v.name}
                                 <span className="small ms-0 ms-sm-2">
@@ -680,7 +715,7 @@ Page content START */}
                               </button>
                             </h6>
                             <div
-                              id={"#collapse-" + i}
+                              id={"collapse-" + i}
                               className="accordion-collapse collapse show"
                               aria-labelledby={"heading-" + i}
                               data-bs-parent="#accordionExample2"
@@ -779,12 +814,11 @@ Page content START */}
                                 <div className="d-flex justify-content-between align-items-center">
                                   <NavLink to={`/quiz/${v._id}`}>
                                     <div className="position-relative d-flex align-items-center">
-                                      <a
-                                        href=""
+                                      <span
                                         className="btn btn-danger-soft btn-round btn-sm mb-0 stretched-link position-static"
                                       >
                                         <i className="fas fa-play me-0" />
-                                      </a>
+                                      </span>
                                       <span className="d-inline-block text-truncate ms-2 mb-0 h6 fw-light w-100px w-sm-200px w-md-400px">
                                         Quiz
                                       </span>
@@ -1750,17 +1784,30 @@ Page content START */}
                           </div>
                         </div>
                         {/* Buttons */}
-                        <div className="mt-3 d-sm-flex justify-content-sm-between">
-                          <a
-                            href="#"
+                        <div className="mt-3 d-flex gap-2">
+                          <button
+                            type="button"
                             className="btn btn-outline-primary mb-0"
                             onClick={() => handlecart(filerdata)}
                           >
                             Add to Cart
-                          </a>
-                          <a href="#" className="btn btn-success mb-0">
-                            Buy course
-                          </a>
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={() => {
+                              console.log("Course ID:", filerdata?._id);
+
+                              if (filerdata?._id) {
+                                navigate(`/course-video-player/${filerdata._id}`);
+                              } else {
+                                console.log("Course ID missing");
+                              }
+                            }}
+                          >
+                            Start Learning
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -1947,384 +1994,7 @@ Page content START */}
 Page content END */}
       {/* =======================
 Listed courses START */}
-      <section className="pt-0">
-        <div className="container">
-          {/* Title */}
-          <div className="row mb-4">
-            <h2 className="mb-0">Top Listed Courses</h2>
-          </div>
-          <div className="row">
-            {/* Slider START */}
-            <div className="tiny-slider arrow-round arrow-blur arrow-hover">
-              <div
-                className="tiny-slider-inner"
-                data-autoplay="false"
-                data-arrow="true"
-                data-edge={2}
-                data-dots="false"
-                data-items={3}
-                data-items-lg={2}
-                data-items-sm={1}
-              >
-                {/* Card Item START */}
-                <Swiper
-                  // install Swiper modules
-                  modules={[Navigation, Pagination, Scrollbar, A11y]}
-                  spaceBetween={50}
-                  slidesPerView={3}
-                  navigation
-                  // pagination={{ clickable: true }}
-                  // scrollbar={{ draggable: true }}
-                  onSwiper={(swiper) => console.log(swiper)}
-                  onSlideChange={() => console.log("slide change")}
-                >
-                  <SwiperSlide>
-                    <div>
-                      <div className="card p-2 border">
-                        <div className="rounded-top overflow-hidden">
-                          <div className="card-overlay-hover">
-                            <img
-                              src="assets/images/courses/4by3/17.jpg"
-                              className="card-img-top"
-                              alt="course image"
-                              style={{
-                                width: "100%",
-                                height: "200px",
-                                objectFit: "cover",
-                              }}
-                            />
-                          </div>
-                          {/* Hover element */}
-                          <div className="card-img-overlay">
-                            <div className="card-element-hover d-flex justify-content-end">
-                              <a
-                                href="#"
-                                className="icon-md bg-white rounded-circle text-center"
-                              >
-                                <i className="fas fa-shopping-cart text-danger" />
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="card-body">
-                          {/* Badge and icon */}
-                          <div className="d-flex justify-content-between">
-                            {/* Rating and info */}
-                            <ul className="list-inline hstack gap-2 mb-0">
-                              {/* Info */}
-                              <li className="list-inline-item d-flex justify-content-center align-items-center">
-                                <div className="icon-md bg-orange bg-opacity-10 text-orange rounded-circle">
-                                  <i className="fas fa-user-graduate" />
-                                </div>
-                                <span className="h6 fw-light ms-2 mb-0">
-                                  9.1k
-                                </span>
-                              </li>
-                              {/* Rating */}
-                              <li className="list-inline-item d-flex justify-content-center align-items-center">
-                                <div className="icon-md bg-warning bg-opacity-15 text-warning rounded-circle">
-                                  <i className="fas fa-star" />
-                                </div>
-                                <span className="h6 fw-light ms-2 mb-0">
-                                  4.5
-                                </span>
-                              </li>
-                            </ul>
-                            {/* Avatar */}
-                            <div className="avatar avatar-sm">
-                              <img
-                                className="avatar-img rounded-circle"
-                                src="assets/images/avatar/09.jpg"
-                                alt="avatar"
-                              />
-                            </div>
-                          </div>
-                          {/* Divider */}
-                          <hr />
-                          {/* Title */}
-                          <h5 className="card-title">
-                            <a href="#">
-                              The Complete Digital Marketing Course - 12 Courses
-                              in 1
-                            </a>
-                          </h5>
-                          {/* Badge and Price */}
-                          <div className="d-flex justify-content-between align-items-center">
-                            <a
-                              href="#"
-                              className="badge bg-info bg-opacity-10 text-info"
-                            >
-                              <i className="fas fa-circle small fw-bold me-2" />
-                              Personal Development
-                            </a>
-                            {/* Price */}
-                            <h3 className="text-success mb-0">$140</h3>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </SwiperSlide>
-                  <SwiperSlide>
-                    <div>
-                      <div className="card p-2 border">
-                        <div className="rounded-top overflow-hidden">
-                          <div className="card-overlay-hover">
-                            <img
-                              src="assets/images/courses/4by3/18.jpg"
-                              className="card-img-top"
-                              alt="course image"
-                              style={{
-                                width: "100%",
-                                height: "200px",
-                                objectFit: "cover",
-                              }}
-                            />
-                          </div>
-                          {/* Hover element */}
-                          <div className="card-img-overlay">
-                            <div className="card-element-hover d-flex justify-content-end">
-                              <a
-                                href="#"
-                                className="icon-md bg-white rounded-circle text-center"
-                              >
-                                <i className="fas fa-shopping-cart text-danger" />
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="card-body">
-                          {/* Badge and icon */}
-                          <div className="d-flex justify-content-between">
-                            {/* Rating and info */}
-                            <ul className="list-inline hstack gap-2 mb-0">
-                              {/* Info */}
-                              <li className="list-inline-item d-flex justify-content-center align-items-center">
-                                <div className="icon-md bg-orange bg-opacity-10 text-orange rounded-circle">
-                                  <i className="fas fa-user-graduate" />
-                                </div>
-                                <span className="h6 fw-light ms-2 mb-0">
-                                  2.5k
-                                </span>
-                              </li>
-                              {/* Rating */}
-                              <li className="list-inline-item d-flex justify-content-center align-items-center">
-                                <div className="icon-md bg-warning bg-opacity-15 text-warning rounded-circle">
-                                  <i className="fas fa-star" />
-                                </div>
-                                <span className="h6 fw-light ms-2 mb-0">
-                                  3.6
-                                </span>
-                              </li>
-                            </ul>
-                            {/* Avatar */}
-                            <div className="avatar avatar-sm">
-                              <img
-                                className="avatar-img rounded-circle"
-                                src="assets/images/avatar/07.jpg"
-                                alt="avatar"
-                              />
-                            </div>
-                          </div>
-                          {/* Divider */}
-                          <hr />
-                          {/* Title */}
-                          <h5 className="card-title">
-                            <a href="#">Fundamentals of Business Analysis</a>
-                          </h5>
-                          {/* Badge and Price */}
-                          <div className="d-flex justify-content-between align-items-center">
-                            <a
-                              href="#"
-                              className="badge bg-info bg-opacity-10 text-info"
-                            >
-                              <i className="fas fa-circle small fw-bold me-2" />
-                              Business Development
-                            </a>
-                            {/* Price */}
-                            <h3 className="text-success mb-0">$160</h3>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </SwiperSlide>
-                  <SwiperSlide>
-                    <div>
-                      <div className="card p-2 border">
-                        <div className="rounded-top overflow-hidden">
-                          <div className="card-overlay-hover">
-                            <img
-                              src="assets/images/courses/4by3/21.jpg"
-                              className="card-img-top"
-                              alt="course image"
-                              style={{
-                                width: "100%",
-                                height: "200px",
-                                objectFit: "cover",
-                              }}
-                            />
-                          </div>
-                          {/* Hover element */}
-                          <div className="card-img-overlay">
-                            <div className="card-element-hover d-flex justify-content-end">
-                              <a
-                                href="#"
-                                className="icon-md bg-white rounded-circle text-center"
-                              >
-                                <i className="fas fa-shopping-cart text-danger" />
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="card-body">
-                          {/* Badge and icon */}
-                          <div className="d-flex justify-content-between">
-                            {/* Rating and info */}
-                            <ul className="list-inline hstack gap-2 mb-0">
-                              {/* Info */}
-                              <li className="list-inline-item d-flex justify-content-center align-items-center">
-                                <div className="icon-md bg-orange bg-opacity-10 text-orange rounded-circle">
-                                  <i className="fas fa-user-graduate" />
-                                </div>
-                                <span className="h6 fw-light ms-2 mb-0">
-                                  6k
-                                </span>
-                              </li>
-                              {/* Rating */}
-                              <li className="list-inline-item d-flex justify-content-center align-items-center">
-                                <div className="icon-md bg-warning bg-opacity-15 text-warning rounded-circle">
-                                  <i className="fas fa-star" />
-                                </div>
-                                <span className="h6 fw-light ms-2 mb-0">
-                                  3.8
-                                </span>
-                              </li>
-                            </ul>
-                            {/* Avatar */}
-                            <div className="avatar avatar-sm">
-                              <img
-                                className="avatar-img rounded-circle"
-                                src="assets/images/avatar/05.jpg"
-                                alt="avatar"
-                              />
-                            </div>
-                          </div>
-                          {/* Divider */}
-                          <hr />
-                          {/* Title */}
-                          <h5 className="card-title">
-                            <a href="#">
-                              Google Ads Training: Become a PPC Expert
-                            </a>
-                          </h5>
-                          {/* Badge and Price */}
-                          <div className="d-flex justify-content-between align-items-center">
-                            <a
-                              href="#"
-                              className="badge bg-info bg-opacity-10 text-info"
-                            >
-                              <i className="fas fa-circle small fw-bold me-2" />{" "}
-                              SEO
-                            </a>
-                            {/* Price */}
-                            <h3 className="text-success mb-0">$226</h3>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </SwiperSlide>
-                  <SwiperSlide>
-                    <div>
-                      <div className="card p-2 border">
-                        <div className="rounded-top overflow-hidden">
-                          <div className="card-overlay-hover">
-                            <img
-                              src="assets/images/courses/4by3/20.jpg"
-                              className="card-img-top"
-                              alt="course image"
-                              style={{
-                                width: "100%",
-                                height: "200px",
-                                objectFit: "cover",
-                              }}
-                            />
-                          </div>
-                          {/* Hover element */}
-                          <div className="card-img-overlay">
-                            <div className="card-element-hover d-flex justify-content-end">
-                              <a
-                                href="#"
-                                className="icon-md bg-white rounded-circle text-center"
-                              >
-                                <i className="fas fa-shopping-cart text-danger" />
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="card-body">
-                          {/* Badge and icon */}
-                          <div className="d-flex justify-content-between">
-                            {/* Rating and info */}
-                            <ul className="list-inline hstack gap-2 mb-0">
-                              {/* Info */}
-                              <li className="list-inline-item d-flex justify-content-center align-items-center">
-                                <div className="icon-md bg-orange bg-opacity-10 text-orange rounded-circle">
-                                  <i className="fas fa-user-graduate" />
-                                </div>
-                                <span className="h6 fw-light ms-2 mb-0">
-                                  15k
-                                </span>
-                              </li>
-                              {/* Rating */}
-                              <li className="list-inline-item d-flex justify-content-center align-items-center">
-                                <div className="icon-md bg-warning bg-opacity-15 text-warning rounded-circle">
-                                  <i className="fas fa-star" />
-                                </div>
-                                <span className="h6 fw-light ms-2 mb-0">
-                                  4.8
-                                </span>
-                              </li>
-                            </ul>
-                            {/* Avatar */}
-                            <div className="avatar avatar-sm">
-                              <img
-                                className="avatar-img rounded-circle"
-                                src="assets/images/avatar/02.jpg"
-                                alt="avatar"
-                              />
-                            </div>
-                          </div>
-                          {/* Divider */}
-                          <hr />
-                          {/* Title */}
-                          <h5 className="card-title">
-                            <a href="#">
-                              Behavior, Psychology and Care Training
-                            </a>
-                          </h5>
-                          {/* Badge and Price */}
-                          <div className="d-flex justify-content-between align-items-center">
-                            <a
-                              href="#"
-                              className="badge bg-info bg-opacity-10 text-info"
-                            >
-                              <i className="fas fa-circle small fw-bold me-2" />
-                              Lifestyle
-                            </a>
-                            {/* Price */}
-                            <h3 className="text-success mb-0">$342</h3>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </SwiperSlide>
-                  ...
-                </Swiper>
-              </div>
-            </div>
-            {/* Slider END */}
-          </div>
-        </div>
-      </section>
+
       {/* =======================
 Listed courses END */}
     </main>

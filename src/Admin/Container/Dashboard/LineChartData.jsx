@@ -1,51 +1,106 @@
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import { LineChart } from "@mui/x-charts";
-import React from "react";
 
-const Fruits = [
-  4000, 3000, 2000, 2780, 1890, 2390, 3490, 2400, 1398, 9800, 3908, 4800, 3800,
-];
-const Vegitables = [
-  2400, 1398, 9800, 3908, 4800, 3800, 4300, 4000, 3000, 2000, 2780, 1890, 2390,
-];
-const DayFruits = [
-  4000, 3000, 2000, 2780, 1890, 2390, 3490, 2400, 1398, 9800, 3908, 4800, 3800,
-];
-const OrganicItems = [
-  2400, 1398, 9800, 3908, 4800, 3800, 4300, 4000, 3000, 2000, 2780, 1890, 2390,
-];
+import React from "react";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import { LineChart } from "@mui/x-charts";
+
 const xLabels = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
 const margin = { right: 24 };
 
-function LineChartData(props) {
+function LineChartData({ dashboardStats = {}, loading = false }) {
+  const activeUsers = Number(dashboardStats.totalActiveUsers) || 0;
+  const courses = Number(dashboardStats.totalCourses) || 0;
+  const enrollments = Number(dashboardStats.totalEnrollments) || 0;
+  const revenue = Number(dashboardStats.totalRevenue) || 0;
+
+  // Temporary monthly values until the backend provides month-wise data.
+  const repeatMonthly = (value) => Array(12).fill(value);
+
   return (
-    <Paper elevation={3} sx={{ p: 3, borderRadius: 3 , height : 400}}>
-      <LineChart
-        series={[
-          { data: Fruits, label: "Fruits" },
-          { data: Vegitables, label: "Vegitables" },
-          { data: DayFruits, label: "DayFruits" },
-          { data: OrganicItems, label: "OrganicItems" }
-        ]}
-        xAxis={[{ scaleType: "point", data: xLabels, height: 28 }]}
-        yAxis={[{ width: 50 }]}
-        margin={margin}
-      />
+    <Paper
+  sx={{
+    p: 2,
+    width: "100%",
+    minWidth: 0,
+    boxSizing: "border-box",
+    overflow: "hidden",
+    borderRadius: 3,
+  }}
+>
+      <Typography variant="h6" fontWeight="bold" sx={{ mb: 1 }}>
+        Monthly LMS Statistics
+      </Typography>
+
+      {loading ? (
+        <Typography sx={{ textAlign: "center", mt: 10 }}>
+          Loading chart data...
+        </Typography>
+      ) : (
+        <LineChart
+          height={320}
+          margin={{ top: 15, right: 25, bottom: 55, left: 60 }}
+          series={[
+            {
+              data: repeatMonthly(activeUsers),
+              label: "Active Users",
+              color: "#0D9488",
+              showMark: true,
+            },
+            {
+              data: repeatMonthly(courses),
+              label: "Courses",
+              color: "#635BFF",
+              showMark: true,
+            },
+            {
+              data: repeatMonthly(enrollments),
+              label: "Enrollments",
+              color: "#F59E0B",
+              showMark: true,
+            },
+            {
+              data: repeatMonthly(revenue),
+              label: "Revenue (₹)",
+              color: "#EC4899",
+              showMark: true,
+              valueFormatter: (value) =>
+                `₹${Number(value || 0).toLocaleString("en-IN")}`,
+            },
+          ]}
+          xAxis={[
+            {
+              scaleType: "point",
+              data: xLabels,
+            },
+          ]}
+          yAxis={[
+            {
+              width: 60,
+              valueFormatter: (value) =>
+                Number(value).toLocaleString("en-IN"),
+            },
+          ]}
+          grid={{ horizontal: true }}
+          slotProps={{
+            legend: {
+              position: {
+                vertical: "bottom",
+                horizontal: "middle",
+              },
+              labelStyle: {
+                fontSize: 11,
+              },
+              itemMarkWidth: 8,
+              itemMarkHeight: 8,
+              padding: 5,
+            },
+          }}
+        />
+      )}
     </Paper>
   );
 }

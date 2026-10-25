@@ -18,7 +18,17 @@ import Tag from "../Admin/Container/Tag/Tag";
 // RoleProtectedRoute restricts route access based on user role (Admin vs Instructor)
 function RoleProtectedRoute({ allowedRoles, children }) {
   const auth = localStorage.getItem("checkauth");
-  const userdata = auth && auth !== "undefined" ? JSON.parse(auth) : null;
+  let userdata = null;
+
+  try {
+    userdata = auth && auth !== "undefined"
+      ? JSON.parse(auth)
+      : null;
+  } catch {
+    userdata = null;
+  }
+
+  userdata = userdata?.data?.data ?? userdata?.data ?? userdata;
 
   if (!userdata) {
     return <Navigate to="/auth" replace />;
