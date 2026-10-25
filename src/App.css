@@ -648,4 +648,104 @@ html[data-theme="dark"] .dropdown-menu .dropdown-menu {
 }
 
 
+/* Footer logo size */
+.eduport-footer .footer-logo {
+  width: 150px !important;
+  height: 40px !important;
+  max-width: 100%;
+  object-fit: contain;
+}
 
+/* Footer app images */
+.eduport-footer .footer-store-img {
+  max-width: 140px;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Header logo size fix */
+header.header-static .navbar-brand {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-right: 20px;
+}
+
+header.header-static .navbar-brand-item {
+  display: block;
+  width: 150px !important;
+  max-width: 150px !important;
+  height: 40px !important;
+  object-fit: contain;
+  object-position: left center;
+}
+
+/* Header menu text size */
+header.header-static .navbar-nav .nav-link {
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* Category dropdown text */
+header.header-static .dropdown-menu .dropdown-item,
+header.header-static .dropdown-menu .dropdown-item a {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Sign in buttons */
+header.header-static .btn {
+  font-size: 13px;
+}
+
+/* Profile image */
+header.header-static img.avatar {
+  width: 40px !important;
+  height: 40px !important;
+  object-fit: cover;
+}
+
+/* Mobile header */
+@media (max-width: 1199.98px) {
+  header.header-static .navbar-brand-item {
+    width: 130px !important;
+    max-width: 130px !important;
+    height: 36px !important;
+  }
+
+  header.header-static .navbar-nav .nav-link {
+    font-size: 14px;
+  }
+}
+
+footer .footer-logo-link {
+  display: inline-flex;
+  align-items: center;
+}
+
+footer img.footer-logo {
+  width: 150px !important;
+  max-width: 100% !important;
+  height: 40px !important;
+  object-fit: contain;
+  object-position: left center;
+}
+
+/* Footer social media icons */
+footer .list-inline-item {
+  display: inline-block;
+}
+
+footer .list-inline-item .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+}
+
+footer .list-inline-item .btn i {
+  display: inline-block;
+  font-size: 16px;
+}

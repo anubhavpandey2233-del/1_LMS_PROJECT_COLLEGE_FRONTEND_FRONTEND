@@ -1,5 +1,11 @@
 import React, { useContext } from "react";
 import { ThemeContext } from "../../context/ThemeContext";
+import {
+  FaFacebookF,
+  FaInstagram,
+  FaTwitter,
+  FaLinkedinIn,
+} from "react-icons/fa";
 
 function Footer(props) {
   const themedata = useContext(ThemeContext);
@@ -15,19 +21,18 @@ function Footer(props) {
           {/* Widget 1 START */}
           <div className="col-lg-3">
             {/* logo */}
-            <a className="me-0" href="index.html">
-              <img
-                className="light-mode-item h-40px"
-                src="/assets/images/logo.svg"
-                alt="logo"
-              />
-              <img
-                className="dark-mode-item h-40px"
-                src="/assets/images/logo-light.svg"
-                alt="logo"
-              />
-            </a>
-            <p className="my-3">
+            <a href="/" className="footer-logo-link">
+  <img
+    src="/assets/images/logo.svg"
+    alt="Eduport logo"
+    style={{
+      display: "block",
+      width: "150px",
+      height: "40px",
+      objectFit: "contain",
+    }}
+  />
+</a>          <p className="my-3">
               Eduport education theme, built specifically for the education
               centers which is dedicated to teaching and involve learners.
             </p>
@@ -39,7 +44,7 @@ function Footer(props) {
                   className="btn btn-white btn-sm shadow px-2 text-facebook"
                   href="#"
                 >
-                  <i className="fab fa-fw fa-facebook-f" />
+                  <FaFacebookF />
                 </a>{" "}
               </li>
               <li className="list-inline-item">
@@ -48,7 +53,7 @@ function Footer(props) {
                   className="btn btn-white btn-sm shadow px-2 text-instagram"
                   href="#"
                 >
-                  <i className="fab fa-fw fa-instagram" />
+                  <FaInstagram />
                 </a>{" "}
               </li>
               <li className="list-inline-item">
@@ -57,7 +62,7 @@ function Footer(props) {
                   className="btn btn-white btn-sm shadow px-2 text-twitter"
                   href="#"
                 >
-                  <i className="fab fa-fw fa-twitter" />
+                 <FaTwitter />
                 </a>{" "}
               </li>
               <li className="list-inline-item">
@@ -66,7 +71,7 @@ function Footer(props) {
                   className="btn btn-white btn-sm shadow px-2 text-linkedin"
                   href="#"
                 >
-                  <i className="fab fa-fw fa-linkedin-in" />
+                  <FaLinkedinIn />
                 </a>{" "}
               </li>
             </ul>
