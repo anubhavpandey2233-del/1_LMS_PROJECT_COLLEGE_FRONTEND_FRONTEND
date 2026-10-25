@@ -497,8 +497,155 @@ html[data-theme="dark"] .dropdown-menu .dropdown-menu {
 }
 
 /* Card image scale transition on hover */
-.card.action-trigger-hover:hover .card-img-top {
-  transform: scale(1.05);
+.card.action-trigger-hover .card-img-top {
+  transition: transform 0.3s ease;
 }
+
+.card.action-trigger-hover:hover .card-img-top {
+  transform: scale(1.03);
+}
+
+
+/* Auth page layout */
+.auth-page {
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.auth-row {
+  min-height: 100vh;
+}
+
+.auth-left {
+  min-width: 0;
+}
+
+.auth-left-content {
+  width: 100%;
+  max-width: 680px;
+  margin-inline: auto;
+}
+
+.auth-illustration {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 3rem;
+}
+
+.auth-illustration img {
+  display: block;
+  width: 100%;
+  max-width: 550px;
+  height: auto;
+  max-height: 420px;
+  object-fit: contain;
+  object-position: center;
+}
+
+.auth-right {
+  min-width: 0;
+  padding: 2rem 1.25rem;
+}
+
+.auth-form-container {
+  max-width: 520px;
+  margin-inline: auto;
+}
+
+.auth-logo {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: 40px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.auth-page .avatar-group {
+  display: flex;
+  align-items: center;
+  padding-left: 0;
+  list-style: none;
+}
+
+.auth-page .avatar-group .avatar {
+  flex-shrink: 0;
+}
+
+.auth-page .avatar-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.auth-page input {
+  min-width: 0;
+}
+
+@media (max-width: 991.98px) {
+  .auth-row {
+    min-height: 100vh;
+  }
+
+  .auth-left {
+    min-height: auto;
+  }
+
+  .auth-left-content {
+    padding: 2rem 1rem !important;
+  }
+
+  .auth-illustration {
+    margin-top: 1.5rem;
+  }
+
+  .auth-illustration img {
+    max-width: 420px;
+    max-height: 300px;
+  }
+
+  .auth-right {
+    padding: 2rem 1.25rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .auth-illustration img {
+    max-width: 100%;
+    max-height: 240px;
+  }
+
+  .auth-right {
+    padding: 1.5rem 1rem;
+  }
+}
+.avatar-group .avatar {
+  width: 35px !important;
+  height: 35px !important;
+  flex-shrink: 0;
+}
+
+.avatar-group .avatar-img {
+  width: 35px !important;
+  height: 35px !important;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.avatar-group {
+  display: flex;
+  align-items: center;
+  padding-left: 0;
+  margin-bottom: 0;
+}
+
+.avatar-group .avatar:not(:first-child) {
+  margin-left: -10px;
+}
+
 
 

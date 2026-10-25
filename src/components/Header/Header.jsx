@@ -122,14 +122,14 @@ function Header(props) {
           <a className="navbar-brand" href="/">
             <img
               className="light-mode-item navbar-brand-item"
-              src="assets/images/logo.svg"
+              src="/assets/images/logo.svg"
               alt="logo"
             />
-            <img
+            {/* <img
               className="dark-mode-item navbar-brand-item"
-              src="assets/images/logo-light.svg"
+              src="/assets/images/logo-light.svg"
               alt="logo"
-            />
+            /> */}
           </a>
           {/* Logo END */}
           {/* Responsive navbar toggler */}
@@ -284,9 +284,9 @@ function Header(props) {
                   })}
                   <li className={"dropdown-submenu dropend"}>
                     {" "}
-                    <a className={"dropdown-item"} href="#">
-                      <NavLink to={"/category"}>All Category</NavLink>
-                    </a>
+                    <NavLink className="dropdown-item" to="/category">
+                      Category
+                    </NavLink>
                   </li>
                 </ul>
               </li>

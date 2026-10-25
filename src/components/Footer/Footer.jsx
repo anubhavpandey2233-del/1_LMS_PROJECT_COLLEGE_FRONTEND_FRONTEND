@@ -18,12 +18,12 @@ function Footer(props) {
             <a className="me-0" href="index.html">
               <img
                 className="light-mode-item h-40px"
-                src="assets/images/logo.svg"
+                src="/assets/images/logo.svg"
                 alt="logo"
               />
               <img
                 className="dark-mode-item h-40px"
-                src="assets/images/logo-light.svg"
+                src="/assets/images/logo-light.svg"
                 alt="logo"
               />
             </a>
@@ -172,7 +172,10 @@ function Footer(props) {
               <div className="col-6 col-sm-4 col-md-3 col-lg-6">
                 <a href="#">
                   {" "}
-                  <img src="assets/images/client/google-play.svg" alt />{" "}
+                  <img
+                    src="/assets/images/client/google-play.svg"
+                    alt="Get it on Google Play"
+                  />
                 </a>
               </div>
               {/* App store button */}
@@ -180,7 +183,7 @@ function Footer(props) {
                 <a href="#">
                   {" "}
                   <img
-                    src="assets/images/client/app-store.svg"
+                    src="/assets/images/client/app-store.svg"
                     alt="app-store"
                   />{" "}
                 </a>
@@ -231,8 +234,8 @@ function Footer(props) {
                           <a className="dropdown-item me-4" href="#">
                             <img
                               className="fa-fw me-2"
-                              src="assets/images/flags/uk.svg"
-                              alt
+                              src="/assets/images/flags/uk.svg"
+                              alt="English"
                             />
                             English
                           </a>
@@ -241,7 +244,7 @@ function Footer(props) {
                           <a className="dropdown-item me-4" href="#">
                             <img
                               className="fa-fw me-2"
-                              src="assets/images/flags/gr.svg"
+                              src="/assets/images/flags/gr.svg"
                               alt
                             />
                             German{" "}
@@ -251,7 +254,7 @@ function Footer(props) {
                           <a className="dropdown-item me-4" href="#">
                             <img
                               className="fa-fw me-2"
-                              src="assets/images/flags/sp.svg"
+                              src="/assets/images/flags/sp.svg"
                               alt
                             />
                             French
