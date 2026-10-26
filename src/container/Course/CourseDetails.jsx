@@ -1677,14 +1677,14 @@ Page content START */}
                           {/* Price and time */}
                           <div>
                             <div className="d-flex align-items-center">
-                             <div>
-  <h3 className="fw-bold mb-1">
-    {filerdata?.name}
-  </h3>
-  <h4 className="fw-bold mb-0">
-    ₹{filerdata?.fees}
-  </h4>
-</div>
+                              <div>
+                                <h3 className="fw-bold mb-1">
+                                  {filerdata?.name}
+                                </h3>
+                                <h4 className="fw-bold mb-0">
+                                  ₹{filerdata?.fees}
+                                </h4>
+                              </div>
                             </div>
 
                           </div>

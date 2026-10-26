@@ -54,10 +54,10 @@ function Home(props) {
     activeCategory === "All"
       ? courses
       : courses.filter((course) =>
-          getDescendantCategoryIds(activeCategory).some(
-            (id) => String(id) === String(course.categories_id)
-          )
-        );
+        getDescendantCategoryIds(activeCategory).some(
+          (id) => String(id) === String(course.categories_id)
+        )
+      );
 
   return (
     <main>
@@ -649,7 +649,7 @@ Action box START */}
             </svg>
           </figure>
           {/* SVG decoration END */}
-          
+
           {/* Row END */}
         </div>
       </section>
@@ -693,6 +693,7 @@ Trending courses START */}
               const catName = catObj ? catObj.name : "General";
 
               return (
+
                 <SwiperSlide key={v._id}>
                   <div>
                     <div
@@ -703,14 +704,16 @@ Trending courses START */}
                       <img
                         src={imgUrl}
                         className="card-img-top"
-                        alt="course image"
+                        alt="Course image"
                         style={{ height: "200px", objectFit: "cover" }}
                       />
 
-                      {/* Ribbon */}
+                      {/* Course Price */}
                       <div className="ribbon mt-3">
                         <span>
-                          {v.fees === 0 || !v.fees ? "Free" : `$${v.fees}`}
+                          {v.fees === 0 || v.fees == null
+                            ? "Free"
+                            : `₹${v.fees}`}
                         </span>
                       </div>
 
@@ -739,67 +742,53 @@ Trending courses START */}
                           </span>
                         </h5>
 
-                        {/* Rating */}
-                        <div className="d-flex justify-content-between mb-2">
+                        {/* Rating and Students */}
+                        <div className="d-flex justify-content-between align-items-center mb-2">
                           <div className="hstack gap-2">
                             <p className="text-warning m-0">
-                              4.5
+                              {v.averageRating ?? 0}
                               <i className="fas fa-star text-warning ms-1" />
                             </p>
-                            <span className="small">(6500)</span>
+
+                            <span className="small">
+                              ({v.totalRatings ?? 0})
+                            </span>
                           </div>
 
-                          <div className="hstack gap-2">
-                            <p className="h6 fw-light mb-0">6500</p>
-                            <span className="small">(Student)</span>
-                          </div>
-                        </div>
-
-                        {/* Time and Lectures */}
-                        <div className="hstack gap-3">
-                          <span className="h6 fw-light mb-0">
-                            <i className="far fa-clock text-danger me-2" />
-                            {v.duration || "6h 56m"}
-                          </span>
-
-                          <span className="h6 fw-light mb-0">
-                            <i className="fas fa-table text-orange me-2" />
-                            15 lectures
-                          </span>
+                          <div className="small">
+  <i className="fas fa-user-graduate me-1" />
+  {v.totalStudents ?? 0} Students Enrolled
+</div>
                         </div>
                       </div>
 
                       {/* Card Footer */}
                       <div className="card-footer pt-0">
-                        <hr />
+                        <div className="d-flex align-items-center">
+                          <div className="avatar avatar-xs">
+                            <img
+                              className="avatar-img rounded-circle"
+                              src={
+                                v.intrucotor_id?.pfp?.[0]?.url ||
+                                "/assets/images/avatar/01.jpg"
+                              }
+                              alt="Instructor"
+                            />
 
-                        <div className="d-flex justify-content-between align-items-center">
-                          {/* Instructor Avatar and Name */}
-                          <div className="d-flex align-items-center">
-                            <div className="avatar avatar-sm">
-                              <img
-                                className="avatar-img rounded-1"
-                                src={v.instructor?.pfp?.[0]?.url || "assets/images/avatar/10.jpg"}
-                                alt={v.instructor?.name || "Instructor"}
-                              />
-                            </div>
-
-                            <p className="mb-0 ms-2">
-                              <span className="h6 fw-light mb-0">
-                                {v.instructor?.name || "Instructor"}
-                              </span>
-                            </p>
+                            {/* {v.intrucotor_id?.name || "Instructor"} */}
                           </div>
 
-                          {/* Price */}
-                          <span className="text-success h5 mb-0">
-                            {v.fees === 0 || !v.fees ? "Free" : `$${v.fees}`}
-                          </span>
+                          <p className="mb-0 ms-2">
+                            <span className="h6 fw-light mb-0">
+                              {v.intrucotor_id?.name || "Instructor"}
+                            </span>
+                          </p>
                         </div>
                       </div>
                     </div>
                   </div>
                 </SwiperSlide>
+
               );
             })}
           </Swiper>
