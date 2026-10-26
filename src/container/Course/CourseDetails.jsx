@@ -45,6 +45,7 @@ import {
 } from "../../redux/Api/review.api";
 import { useFormik } from "formik";
 
+
 function CourseDetails(props) {
   const [rating, setRating] = useState();
   const params = useParams();
@@ -61,10 +62,28 @@ function CourseDetails(props) {
 
   console.log("checklogin", auth?.user?.data);
 
-  const filerdata = data?.data?.find(
-    (v) => String(v._id) === String(params._id)
+  // const filerdata = data?.data?.find(
+  //   (v) => String(v._id) === String(params._id)
+  // );
+  // console.log("course data", filerdata);
+
+  console.log("URL ID:", params?._id);
+  console.log("Full API Data:", data);
+  console.log("API Data List:", data?.data);
+
+  const courseList = Array.isArray(data?.data)
+    ? data.data
+    : Array.isArray(data?.data?.data)
+      ? data.data.data
+      : [];
+
+  const filerdata = courseList.find(
+    (v) => String(v._id) === String(params?._id)
   );
-  console.log("course data", filerdata);
+
+  console.log("Matched Course:", filerdata);
+  console.log("Course fields:", Object.keys(filerdata || {}));
+  console.log("Full course object:", JSON.stringify(filerdata, null, 2));
 
   const sectiondata =
     section?.data?.filter(
@@ -160,19 +179,74 @@ function CourseDetails(props) {
   const [addProgress] = useAddprogessMutation();
   const [updateProgress] = useUpdateprogessMutation();
 
-  const { data: enrollment } = useGetenrollmentQuery();
+  const {
+    data: enrollment,
+    refetch: refetchEnrollment,
+  } = useGetenrollmentQuery();
   console.log("Enrollment:", enrollment?.data);
 
+  const [addEnrollment, { isLoading: isEnrolling }] =
+    useAddenrollmentMutation();
   const [updateEnroll] = useUpdateenrollmentMutation();
 
-  const Enroll_USER = enrollment?.data?.find(
+  const currentUserId = auth?.user?.data?._id;
+  const currentCourseId = filerdata?._id;
+
+  const Enroll_USER = (enrollment?.data || []).find(
     (v) =>
-      String(v?.user_id?._id ?? v?.user_id) ===
-      String(auth?.user?.data?._id)
+      String(v?.user_id?._id ?? v?.user_id) === String(currentUserId) &&
+      String(v?.course_id?._id ?? v?.course_id) === String(currentCourseId)
   );
 
   const Enroll_id = Enroll_USER?._id;
 
+  const handleEnroll = async () => {
+    try {
+      if (!currentUserId) {
+        alert("Please login first to enroll.");
+        navigate("/login");
+        return;
+      }
+
+      if (!currentCourseId) {
+        alert("Course details are not available.");
+        return;
+      }
+
+      if (Enroll_USER) {
+        alert("You are already enrolled in this course!");
+        return;
+      }
+
+      await addEnrollment({
+        course_id: currentCourseId,
+        user_id: currentUserId,
+      }).unwrap();
+
+      await refetchEnrollment();
+
+      alert("You enrolled successfully! 🎉");
+    } catch (error) {
+      console.error("Enrollment failed:", error);
+      console.error("Error response:", error?.data);
+
+      try {
+        if (error?.status === 409 || error?.data?.alreadyEnrolled) {
+          await refetchEnrollment();
+          alert("You are already enrolled in this course!");
+        } else {
+          alert(
+            error?.data?.message ||
+            error?.data?.Message ||
+            "Enrollment failed. Please try again."
+          );
+        }
+      } catch (refreshError) {
+        console.error("Enrollment refresh failed:", refreshError);
+        alert("Enrollment failed. Please try again.");
+      }
+    }
+  };
   const sortedSections = [...sectiondata].sort(
     (a, b) => (a.order || 0) - (b.order || 0)
   );
@@ -358,6 +432,9 @@ function CourseDetails(props) {
     return <div className="text-center py-5">Loading...</div>;
   }
 
+  console.log("FULL INSTRUCTOR:", filerdata?.intrucotor_id);
+  console.log("COURSE DATA:", filerdata);
+
   return (
     <main>
       {/* =======================
@@ -395,18 +472,18 @@ Page intro START */}
               </p>
               <p className="mb-4">
                 <p
-  className="mb-4"
-  style={{
-    fontSize: "16px",
-    fontWeight: 400,
-    lineHeight: 1.6,
-  }}
->
-  {filerdata?.description || filerdata?.desciption || ""}
-</p>
+                  className="mb-4"
+                  style={{
+                    fontSize: "16px",
+                    fontWeight: 400,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {filerdata?.description || filerdata?.desciption || ""}
+                </p>
               </p>
               {/* Content */}
-             
+
             </div>
 
             {/* Image Carousel */}
@@ -549,50 +626,23 @@ Page content START */}
                   >
                     {/* Course detail START */}
                     <h5 className="mb-3">Course Description</h5>
-                    <p className="mb-3">
-                      Welcome to the{" "}
-                      <strong>
-                        {" "}
-                        Digital Marketing Ultimate Course Bundle - 12 Courses in
-                        1 (Over 36 hours of content)
-                      </strong>
-                    </p>
-                    <p className="mb-3">
-                      In this practical hands-on training, you’re going to learn
-                      to become a digital marketing expert with this{" "}
-                      <strong>
-                        {" "}
-                        ultimate course bundle that includes 12 digital
-                        marketing courses in 1!
-                      </strong>
-                    </p>
-                    <p className="mb-3">
-                      If you wish to find out the skills that should be covered
-                      in a basic digital marketing course syllabus in India or
-                      anywhere around the world, then reading this blog will
-                      help. Before we delve into the advanced{" "}
-                      <strong>
-                        <a
-                          href="#"
-                          className="text-reset text-decoration-underline"
-                        >
-                          digital marketing course
-                        </a>
-                      </strong>{" "}
-                      syllabus, let’s look at the scope of digital marketing and
-                      what the future holds.
-                    </p>
-                    <p className="mb-0">
-                      We focus a great deal on the understanding of behavioral
-                      psychology and influence triggers which are crucial for
-                      becoming a well rounded Digital Marketer. We understand
-                      that theory is important to build a solid foundation, we
-                      understand that theory alone isn’t going to get the job
-                      done so that’s why this course is packed with practical
-                      hands-on examples that you can follow step by step.
-                    </p>
+
+                    <div
+                      className="course-overview"
+                      style={{
+                        fontSize: "16px",
+                        fontWeight: 400,
+                        lineHeight: 1.8,
+                        whiteSpace: "pre-line",
+                        overflowWrap: "anywhere",
+                      }}
+                    >
+                      {filerdata?.description ||
+                        filerdata?.desciption ||
+                        "No description added by the teacher."}
+                    </div>
                     {/* List content */}
-                   
+
                     {/* Course detail END */}
                   </div>
                   {/* Content END */}
@@ -646,13 +696,14 @@ Page content START */}
                         console.log(percentage);
 
                         return (
+
                           <div className="accordion-item mb-3">
                             <h6
                               className="accordion-header font-base"
                               id={"heading-" + i}
                             >
                               <button
-                                className="accordion-button fw-bold rounded d-sm-flex d-inline-block collapsed"
+                                className="accordion-button fw-bold rounded"
                                 type="button"
                                 data-bs-toggle="collapse"
                                 data-bs-target={"#collapse-" + i}
@@ -660,11 +711,12 @@ Page content START */}
                                 aria-controls={"collapse-" + i}
                               >
                                 {v.name}
-                                <span className="small ms-0 ms-sm-2">
-                                  (3 Lectures)
+                                <span className="small ms-2">
+                                  ({contentdata?.length || 0} Lectures)
                                 </span>
                               </button>
                             </h6>
+
                             <div
                               id={"collapse-" + i}
                               className="accordion-collapse collapse show"
@@ -672,114 +724,103 @@ Page content START */}
                               data-bs-parent="#accordionExample2"
                             >
                               <div className="accordion-body mt-3">
-                                {/* Course lecture */}
-                                {contentdata?.map((cn) => {
-                                  console.log("cbbbbnnnnnnnnnnnnnnnnn", cn._id);
 
+                                {contentdata?.map((cn) => {
                                   const file = cn.content_file?.[0];
-                                  console.log(file);
-                                  console.log("type:", file?.type);
 
                                   const isCompleted = progress?.data?.find(
                                     (p) =>
                                       (p.content_id === cn._id ||
-                                        p.content_id === file._id) &&
-                                      p.enrollment_id === Enroll_id,
+                                        p.content_id === file?._id) &&
+                                      p.enrollment_id === Enroll_id
                                   );
-                                  console.log(
-                                    "123456789",
-                                    isCompleted,
-                                    cn._id,
-                                    Enroll_id,
-                                  );
+
                                   const complete = isCompleted?.is_completed;
-                                  console.log("comp", complete);
 
                                   return (
-                                    <>
-                                      {file?.type === "video" ? (
+                                    <React.Fragment key={cn._id}>
+                                      {file?.type === "video" && (
                                         <video
-                                          // ref={vRef}
                                           style={{ display: "none" }}
                                           onLoadedMetadata={(e) =>
                                             onTimeUpdate(e, cn._id)
                                           }
                                           src={file.url}
-                                        ></video>
-                                      ) : (
-                                        ""
+                                          preload="metadata"
+                                        />
                                       )}
-                                      <div className="d-flex justify-content-between align-items-center">
-                                        <NavLink to={`/course-video-player/${cn._id}`}>
-                                          <div>
-                                            <span className="btn">
-                                              <i className="fas fa-play me-0" />
-                                            </span>
-                                            <span>...</span>
-                                          </div>
+
+                                      <div className="curriculum-lecture">
+                                        <NavLink
+                                          className="curriculum-lecture-title"
+                                          to={`/course-video-player/${cn._id}`}
+                                        >
+                                          <i className="fas fa-play me-2" />
+
+                                          <span>
+                                            {cn.name ||
+                                              cn.title ||
+                                              cn.content_name ||
+                                              "Lecture"}
+                                          </span>
+
+                                          {complete && (
+                                            <i className="fas fa-check-circle text-success ms-2" />
+                                          )}
                                         </NavLink>
-                                        {
-                                          cn.type === "free" || Pay_Course ? (
-                                            <div className="d-flex align-items-center">
-                                              <NavLink
-                                                style={{
-                                                  backgroundColor: "blue",
-                                                  color: "white",
-                                                  borderRadius: "5px",
-                                                  padding: "5px",
-                                                }}
-                                                to={`/course-video-player/${cn._id}`}
-                                              >
-                                                Preview
-                                              </NavLink>
-                                            </div>
+
+                                        <div className="curriculum-lecture-action">
+                                          {cn.type === "free" || Pay_Course ? (
+                                            <NavLink
+                                              className="curriculum-preview"
+                                              to={`/course-video-player/${cn._id}`}
+                                            >
+                                              Preview
+                                            </NavLink>
                                           ) : (
                                             <button
-                                              style={{
-                                                backgroundColor: "red",
-                                                borderRadius: "5px",
-                                              }}
+                                              type="button"
+                                              className="curriculum-locked"
+                                              disabled
                                             >
                                               Locked
                                             </button>
-                                          )
-                                          // )
-                                        }
-                                        <p className="mb-0">
-                                          {videoDur[cn._id]
-                                            ? `${Math.floor(videoDur[cn._id] / 60)}
-                                                  :${Math.floor(
-                                              videoDur[cn._id] % 60,
+                                          )}
+                                        </div>
+
+                                        <span className="curriculum-lecture-duration">
+                                          {videoDur[cn._id] != null
+                                            ? `${Math.floor(
+                                              videoDur[cn._id] / 60
+                                            )}:${Math.floor(
+                                              videoDur[cn._id] % 60
                                             )
                                               .toString()
                                               .padStart(2, "0")}`
                                             : ""}
-                                        </p>
+                                        </span>
                                       </div>
-                                      <hr />
-                                    </>
+
+                                      <hr className="curriculum-divider" />
+                                    </React.Fragment>
                                   );
                                 })}
-                                {/* Divider */}
-                                {/* Course lecture */}
-                                <div className="d-flex justify-content-between align-items-center">
-                                  <NavLink to={`/quiz/${v._id}`}>
-                                    <div className="position-relative d-flex align-items-center">
-                                      <span
-                                        className="btn btn-danger-soft btn-round btn-sm mb-0 stretched-link position-static"
-                                      >
-                                        <i className="fas fa-play me-0" />
-                                      </span>
-                                      <span className="d-inline-block text-truncate ms-2 mb-0 h6 fw-light w-100px w-sm-200px w-md-400px">
-                                        Quiz
-                                      </span>
-                                    </div>
+
+                                <div className="curriculum-lecture curriculum-quiz">
+                                  <NavLink
+                                    className="curriculum-lecture-title"
+                                    to={`/quiz/${v._id}`}
+                                  >
+                                    <i className="fas fa-play me-2" />
+                                    <span>Quiz</span>
                                   </NavLink>
                                 </div>
-                                <hr /> {/* Divider */}
+
+                                <hr className="curriculum-divider" />
                               </div>
                             </div>
                           </div>
+
                         );
                       })}
                     </div>
@@ -794,97 +835,57 @@ Page content START */}
                     aria-labelledby="course-pills-tab-3"
                   >
                     {/* Card START */}
+
+
                     <div className="card mb-0 mb-md-4">
                       <div className="row g-0 align-items-center">
                         <div className="col-md-5">
-                          {/* Image */}
-                          <img
-                            src="assets/images/instructor/01.jpg"
-                            className="img-fluid rounded-3"
-                            alt="instructor-image"
-                          />
+                          <div className="text-center p-3">
+                            <img
+                              src={
+                                filerdata?.intrucotor_id?.pfp?.[0]?.url ||
+                                "/default-instructor.png"
+                              }
+                              alt={filerdata?.intrucotor_id?.name || "Instructor"}
+                              className="img-fluid rounded-circle"
+                              style={{
+                                width: "150px",
+                                height: "150px",
+                                objectFit: "cover",
+                                border: "3px solid #e9ecef"
+                              }}
+                            />
+                          </div>
                         </div>
+
                         <div className="col-md-7">
-                          {/* Card body */}
                           <div className="card-body">
-                            {/* Title */}
-                            <h3 className="card-title mb-0">Louis Ferguson</h3>
-                            <p className="mb-2">Instructor of Marketing</p>
-                            {/* Social button */}
-                            <ul className="list-inline mb-3">
-                              <li className="list-inline-item me-3">
-                                <a href="#" className="fs-5 text-twitter">
-                                  <i className="fab fa-twitter-square" />
+                            <h3 className="card-title mb-2">
+                              {filerdata?.intrucotor_id?.name || "Course Instructor"}
+                            </h3>
+
+                            <p className="text-muted mb-3">Instructor</p>
+
+                            {filerdata?.intrucotor_id?.email && (
+                              <div className="d-flex align-items-center mb-2">
+                                <span className="icon-md bg-info bg-opacity-10 text-info rounded-circle d-flex align-items-center justify-content-center">
+                                  <i className="fas fa-envelope" />
+                                </span>
+
+                                <a
+                                  href={`mailto:${filerdata.intrucotor_id.email}`}
+                                  className="ms-2 text-decoration-none"
+                                >
+                                  {filerdata.intrucotor_id.email}
                                 </a>
-                              </li>
-                              <li className="list-inline-item me-3">
-                                <a href="#" className="fs-5 text-instagram">
-                                  <i className="fab fa-instagram-square" />
-                                </a>
-                              </li>
-                              <li className="list-inline-item me-3">
-                                <a href="#" className="fs-5 text-facebook">
-                                  <i className="fab fa-facebook-square" />
-                                </a>
-                              </li>
-                              <li className="list-inline-item me-3">
-                                <a href="#" className="fs-5 text-linkedin">
-                                  <i className="fab fa-linkedin" />
-                                </a>
-                              </li>
-                              <li className="list-inline-item">
-                                <a href="#" className="fs-5 text-youtube">
-                                  <i className="fab fa-youtube-square" />
-                                </a>
-                              </li>
-                            </ul>
-                            {/* Info */}
-                            <ul className="list-inline">
-                              <li className="list-inline-item">
-                                <div className="d-flex align-items-center me-3 mb-2">
-                                  <span className="icon-md bg-orange bg-opacity-10 text-orange rounded-circle">
-                                    <i className="fas fa-user-graduate" />
-                                  </span>
-                                  <span className="h6 fw-light mb-0 ms-2">
-                                    9.1k
-                                  </span>
-                                </div>
-                              </li>
-                              <li className="list-inline-item">
-                                <div className="d-flex align-items-center me-3 mb-2">
-                                  <span className="icon-md bg-warning bg-opacity-15 text-warning rounded-circle">
-                                    <i className="fas fa-star" />
-                                  </span>
-                                  <span className="h6 fw-light mb-0 ms-2">
-                                    4.5
-                                  </span>
-                                </div>
-                              </li>
-                              <li className="list-inline-item">
-                                <div className="d-flex align-items-center me-3 mb-2">
-                                  <span className="icon-md bg-danger bg-opacity-10 text-danger rounded-circle">
-                                    <i className="fas fa-play" />
-                                  </span>
-                                  <span className="h6 fw-light mb-0 ms-2">
-                                    29 Courses
-                                  </span>
-                                </div>
-                              </li>
-                              <li className="list-inline-item">
-                                <div className="d-flex align-items-center me-3 mb-2">
-                                  <span className="icon-md bg-info bg-opacity-10 text-info rounded-circle">
-                                    <i className="fas fa-comment-dots" />
-                                  </span>
-                                  <span className="h6 fw-light mb-0 ms-2">
-                                    205
-                                  </span>
-                                </div>
-                              </li>
-                            </ul>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
                     </div>
+
+
                     {/* Card END */}
                     {/* Instructor info */}
                     <h5 className="mb-3">About Instructor</h5>
@@ -1676,18 +1677,16 @@ Page content START */}
                           {/* Price and time */}
                           <div>
                             <div className="d-flex align-items-center">
-                              <h3 className="fw-bold mb-0 me-2">$150</h3>
-                              <span className="text-decoration-line-through mb-0 me-2">
-                                $350
-                              </span>
-                              <span className="badge bg-orange text-white mb-0">
-                                60% off
-                              </span>
+                             <div>
+  <h3 className="fw-bold mb-1">
+    {filerdata?.name}
+  </h3>
+  <h4 className="fw-bold mb-0">
+    ₹{filerdata?.fees}
+  </h4>
+</div>
                             </div>
-                            <p className="mb-0 text-danger">
-                              <i className="fas fa-stopwatch me-2" />5 days left
-                              at this price
-                            </p>
+
                           </div>
                           {/* Share button with dropdown */}
                           <div className="dropdown">
@@ -1748,16 +1747,15 @@ Page content START */}
                             type="button"
                             className="btn btn-primary"
                             onClick={() => {
-                              console.log("Course ID:", filerdata?._id);
-
-                              if (filerdata?._id) {
-                                navigate(`/course-video-player/${filerdata._id}`);
+                              if (Enroll_USER) {
+                                navigate(`/course-video-player/${currentCourseId}`);
                               } else {
-                                console.log("Course ID missing");
+                                handleEnroll();
                               }
                             }}
+                            disabled={isEnrolling || !currentCourseId}
                           >
-                            Start Learning
+                            {isEnrolling ? "Enrolling..." : Enroll_USER ? "Start Learning" : "Enroll Now"}
                           </button>
                         </div>
                       </div>

@@ -36,7 +36,7 @@ const formatTime = (seconds) => {
 
   if (hours > 0) {
     return `${hours}:${String(minutes).padStart(2, "0")}:${String(
-      remainingSeconds,
+      remainingSeconds
     ).padStart(2, "0")}`;
   }
 
@@ -79,85 +79,37 @@ function CourseVideoPlayer() {
   const [savingProgress, setSavingProgress] = useState(false);
   const [message, setMessage] = useState("");
 
+  const [selectedContentId, setSelectedContentId] = useState("");
+
   const courses = courseResponse?.data ?? [];
   const sections = sectionResponse?.data ?? [];
   const contents = contentResponse?.data ?? [];
   const enrollments = enrollmentResponse?.data ?? [];
   const progresses = progressResponse?.data ?? [];
 
-  // The route ID may be either a course ID or a lecture/content ID.
-  const contentData = useMemo(
+  const routeContent = useMemo(
     () => contents.find((item) => getId(item._id) === String(_id)),
-    [contents, _id],
+    [contents, _id]
   );
 
   const routeCourse = useMemo(
     () => courses.find((item) => getId(item._id) === String(_id)),
-    [courses, _id],
+    [courses, _id]
   );
 
-  const initialSection = useMemo(
-    () =>
-      sections.find((item) => getId(item.course_id) === String(_id)),
-    [sections, _id],
-  );
-
-  const initialLecture = useMemo(() => {
-    if (contentData) return contentData;
-
-    const courseSectionIds = sections
-      .filter(
-        (item) =>
-          getId(item.course_id) === String(_id) ||
-          getId(item._id) === getId(initialSection?._id),
-      )
-      .map((item) => getId(item._id));
-
-    return contents
-      .filter(
-        (item) =>
-          getId(item.course_id) === String(_id) ||
-          courseSectionIds.includes(getId(item.section_id)),
-      )
-      .sort(
-        (a, b) => Number(a.order ?? 0) - Number(b.order ?? 0),
-      )[0];
-  }, [contentData, sections, contents, _id, initialSection]);
-
-  const activeContent = contentData || initialLecture;
-  const activeContentId = getId(activeContent?._id);
-
-  const sectionId = getId(activeContent?.section_id);
-
-  const sectionForContent = useMemo(
-    () => sections.find((item) => getId(item._id) === sectionId),
-    [sections, sectionId],
-  );
-
-  const courseId =
-    getId(activeContent?.course_id) ||
-    getId(sectionForContent?.course_id) ||
-    getId(routeCourse?._id) ||
-    String(_id);
-
-  const courseData = useMemo(
-    () => courses.find((item) => getId(item._id) === courseId),
-    [courses, courseId],
-  );
+  const courseId = getId(routeCourse?._id) || getId(routeContent?.course_id);
 
   const courseSections = useMemo(
     () =>
       sections
         .filter((item) => getId(item.course_id) === courseId)
-        .sort(
-          (a, b) => Number(a.order ?? 0) - Number(b.order ?? 0),
-        ),
-    [sections, courseId],
+        .sort((a, b) => Number(a.order ?? 0) - Number(b.order ?? 0)),
+    [sections, courseId]
   );
 
   const courseSectionIds = useMemo(
     () => courseSections.map((item) => getId(item._id)),
-    [courseSections],
+    [courseSections]
   );
 
   const courseContents = useMemo(
@@ -166,28 +118,54 @@ function CourseVideoPlayer() {
         .filter(
           (item) =>
             getId(item.course_id) === courseId ||
-            courseSectionIds.includes(getId(item.section_id)),
+            courseSectionIds.includes(getId(item.section_id))
         )
-        .sort(
-          (a, b) => Number(a.order ?? 0) - Number(b.order ?? 0),
-        ),
-    [contents, courseId, courseSectionIds],
+        .sort((a, b) => Number(a.order ?? 0) - Number(b.order ?? 0)),
+    [contents, courseId, courseSectionIds]
   );
 
-  const currentSection = useMemo(
-    () =>
-      courseSections.find((item) => getId(item._id) === sectionId),
-    [courseSections, sectionId],
+  useEffect(() => {
+    if (!courseContents.length) return;
+
+    const routeContentId = getId(routeContent?._id);
+
+    if (routeContentId && courseContents.some((item) => getId(item._id) === routeContentId)) {
+      setSelectedContentId(routeContentId);
+      return;
+    }
+
+    setSelectedContentId((previous) => {
+      if (previous && courseContents.some((item) => getId(item._id) === previous)) {
+        return previous;
+      }
+
+      return getId(courseContents[0]?._id);
+    });
+  }, [courseContents, routeContent]);
+
+  const activeContent = useMemo(
+    () => courseContents.find((item) => getId(item._id) === selectedContentId),
+    [courseContents, selectedContentId]
   );
+
+  const activeContentId = getId(activeContent?._id);
+  const sectionId = getId(activeContent?.section_id);
+
+  const currentSection = useMemo(
+    () => courseSections.find((item) => getId(item._id) === sectionId),
+    [courseSections, sectionId]
+  );
+
+  const courseData = routeCourse || courses.find((item) => getId(item._id) === courseId);
 
   const enrollment = useMemo(
     () =>
       enrollments.find(
         (item) =>
           getId(item.user_id) === userId &&
-          getId(item.course_id) === courseId,
+          getId(item.course_id) === courseId
       ),
-    [enrollments, userId, courseId],
+    [enrollments, userId, courseId]
   );
 
   const enrollmentId = getId(enrollment?._id);
@@ -197,9 +175,9 @@ function CourseVideoPlayer() {
       progresses.find(
         (item) =>
           getId(item.content_id) === activeContentId &&
-          getId(item.enrollment_id) === enrollmentId,
+          getId(item.enrollment_id) === enrollmentId
       ),
-    [progresses, activeContentId, enrollmentId],
+    [progresses, activeContentId, enrollmentId]
   );
 
   const media = activeContent?.content_file?.[0];
@@ -229,7 +207,7 @@ function CourseVideoPlayer() {
     const existingProgress = progresses.find(
       (item) =>
         getId(item.content_id) === activeContentId &&
-        getId(item.enrollment_id) === enrollmentId,
+        getId(item.enrollment_id) === enrollmentId
     );
 
     const payload = {
@@ -269,7 +247,7 @@ function CourseVideoPlayer() {
     if (activeContentId && userId) {
       localStorage.setItem(
         `video-${userId}-${activeContentId}`,
-        String(time),
+        String(time)
       );
     }
   };
@@ -281,7 +259,7 @@ function CourseVideoPlayer() {
     setVideoDuration(duration);
 
     const savedTime = Number(
-      localStorage.getItem(`video-${userId}-${activeContentId}`) ?? 0,
+      localStorage.getItem(`video-${userId}-${activeContentId}`) ?? 0
     );
 
     const progressTime = Number(currentProgress?.duration ?? 0);
@@ -327,6 +305,11 @@ function CourseVideoPlayer() {
     });
   };
 
+  const handleLectureSelect = (lectureId) => {
+    setSelectedContentId(lectureId);
+    navigate(`/course-video-player/${lectureId}`, { replace: true });
+  };
+
   if (courseLoading || sectionLoading || contentLoading) {
     return (
       <div className="container py-5 text-center">
@@ -352,19 +335,27 @@ function CourseVideoPlayer() {
     );
   }
 
-  if (!activeContent) {
+  if (!courseData) {
+    return (
+      <div className="container py-5 text-center">
+        <h4>Course not found</h4>
+        <p>Course ID aur course API response check karo.</p>
+        <button className="btn btn-primary" onClick={() => navigate(-1)}>
+          Go Back
+        </button>
+      </div>
+    );
+  }
+
+  if (!courseContents.length || !activeContent) {
     return (
       <div className="container py-5 text-center">
         <h4>Lecture not found</h4>
         <p>
-          Is course mein abhi koi lecture nahi mila. Course sections aur
-          content data check karo.
+          Is course ke sections ya lectures API se nahi mile. Course ID,
+          section_id aur course_id check karo.
         </p>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={() => navigate(-1)}
-        >
+        <button className="btn btn-primary" onClick={() => navigate(-1)}>
           Go Back
         </button>
       </div>
@@ -376,8 +367,8 @@ function CourseVideoPlayer() {
       (progressItem) =>
         getId(progressItem.content_id) === getId(item._id) &&
         getId(progressItem.enrollment_id) === enrollmentId &&
-        progressItem.is_completed,
-    ),
+        progressItem.is_completed
+    )
   ).length;
 
   return (
@@ -426,9 +417,7 @@ function CourseVideoPlayer() {
                 )
               ) : (
                 <div className="text-center text-white py-5">
-                  <p className="mb-0">
-                    Is lecture ki file available nahi hai.
-                  </p>
+                  <p className="mb-0">Is lecture ki file available nahi hai.</p>
                 </div>
               )}
             </div>
@@ -458,7 +447,8 @@ function CourseVideoPlayer() {
 
               {!enrollmentId && (
                 <div className="alert alert-warning py-2">
-                  Progress save karne ke liye course enrollment zaroori hai.
+                  Is user ke liye course enrollment nahi mila. Progress save
+                  karne ke liye enrollment zaroori hai.
                 </div>
               )}
 
@@ -493,9 +483,7 @@ function CourseVideoPlayer() {
         <div className="col-lg-4">
           <div className="card border-0 shadow-sm">
             <div className="card-header bg-light">
-              <h5 className="mb-1">
-                {courseData?.name || "Course Content"}
-              </h5>
+              <h5 className="mb-1">{courseData?.name || "Course Content"}</h5>
               <p className="small text-muted mb-0">
                 {completedCount} of {courseContents.length} lectures completed
               </p>
@@ -507,17 +495,14 @@ function CourseVideoPlayer() {
                   {courseSections.map((sectionItem, index) => {
                     const sectionLectures = courseContents.filter(
                       (item) =>
-                        getId(item.section_id) === getId(sectionItem._id),
+                        getId(item.section_id) === getId(sectionItem._id)
                     );
 
                     const sectionIsCurrent =
                       getId(sectionItem._id) === sectionId;
 
                     return (
-                      <div
-                        className="accordion-item"
-                        key={sectionItem._id}
-                      >
+                      <div className="accordion-item" key={sectionItem._id}>
                         <h2 className="accordion-header">
                           <button
                             className={`accordion-button ${
@@ -552,23 +537,17 @@ function CourseVideoPlayer() {
                                 const completed = progresses.some(
                                   (item) =>
                                     getId(item.content_id) === lectureId &&
-                                    getId(item.enrollment_id) ===
-                                      enrollmentId &&
-                                    item.is_completed,
+                                    getId(item.enrollment_id) === enrollmentId &&
+                                    item.is_completed
                                 );
 
-                                const active =
-                                  lectureId === activeContentId;
+                                const active = lectureId === activeContentId;
 
                                 return (
                                   <button
                                     type="button"
                                     key={lectureId}
-                                    onClick={() =>
-                                      navigate(
-                                        `/course-video-player/${lectureId}`,
-                                      )
-                                    }
+                                    onClick={() => handleLectureSelect(lectureId)}
                                     className={`list-group-item list-group-item-action d-flex align-items-center gap-2 ${
                                       active ? "active" : ""
                                     }`}
@@ -632,6 +611,7 @@ function CourseVideoPlayer() {
 }
 
 export default CourseVideoPlayer;
+
 
 
 

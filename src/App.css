@@ -783,4 +783,90 @@ footer .list-inline-item a.text-twitter svg {
 footer .list-inline-item a.text-linkedin svg {
   color: #0A66C2 !important;
   fill: #0A66C2 !important;
+
+}
+
+  
+.curriculum-lecture {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px 70px;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 0;
+}
+
+.curriculum-lecture-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: #212529;
+  text-decoration: none;
+}
+
+.curriculum-lecture-title span {
+  overflow-wrap: anywhere;
+}
+
+.curriculum-lecture-title:hover {
+  color: #0d6efd;
+}
+
+.curriculum-lecture-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.curriculum-preview,
+.curriculum-locked {
+  display: inline-block;
+  padding: 7px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.curriculum-preview {
+  background: #0d6efd;
+  color: #fff;
+}
+
+.curriculum-preview:hover {
+  background: #0b5ed7;
+  color: #fff;
+}
+
+.curriculum-locked {
+  background: #dc3545;
+  color: #fff;
+  cursor: not-allowed;
+}
+
+.curriculum-lecture-duration {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.curriculum-divider {
+  margin: 0;
+  color: #dee2e6;
+}
+
+@media (max-width: 576px) {
+  .curriculum-lecture {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+
+  .curriculum-lecture-action {
+    justify-content: flex-end;
+  }
+
+  .curriculum-lecture-duration {
+    grid-column: 2;
+  }
 }
