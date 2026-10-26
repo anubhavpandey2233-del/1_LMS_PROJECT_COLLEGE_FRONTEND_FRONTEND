@@ -136,7 +136,7 @@ function CourseDetails(props) {
     PaymentUser.some(
       (paymentItem) =>
         String(paymentItem?.cart_id?._id ?? paymentItem?.cart_id) ===
-          String(cart?._id) &&
+        String(cart?._id) &&
         paymentItem?.status === "completed"
     )
   );
@@ -206,7 +206,7 @@ function CourseDetails(props) {
             String(p.content_id?._id ?? p.content_id) === String(file._id))
         ) &&
         String(p.enrollment_id?._id ?? p.enrollment_id) ===
-          String(Enroll_id)
+        String(Enroll_id)
     );
 
     return {
@@ -222,8 +222,8 @@ function CourseDetails(props) {
   const courseProgressPercentage =
     totalLecturesCount > 0
       ? Math.round(
-          (completedLecturesCount / totalLecturesCount) * 100
-        )
+        (completedLecturesCount / totalLecturesCount) * 100
+      )
       : 0;
 
   const firstIncompleteLecture = lecturesWithCompletion.find(
@@ -372,36 +372,41 @@ Page intro START */}
                 {filerdata?.name}
               </h6>
               {/* Title */}
-              <h1 className="mb-3">{filerdata?.desciption}</h1>
+              <h2
+                className="mb-3"
+                style={{
+                  fontSize: "24px",
+                  fontWeight: 600,
+                  lineHeight: 1.4,
+                }}
+              >
+                {filerdata?.name}
+              </h2>
+
+              <p
+                className="mb-4"
+                style={{
+                  fontSize: "16px",
+                  fontWeight: 400,
+                  lineHeight: 1.6,
+                }}
+              >
+                {filerdata?.desciption || filerdata?.description || ""}
+              </p>
               <p className="mb-4">
-                Satisfied conveying a dependent contented he gentleman agreeable
-                do be. Warrant private blushes removed an in equally totally if.
-                Delivered dejection necessary objection do Mr prevailed. Mr
-                feeling does chiefly cordial in do.
+                <p
+  className="mb-4"
+  style={{
+    fontSize: "16px",
+    fontWeight: 400,
+    lineHeight: 1.6,
+  }}
+>
+  {filerdata?.description || filerdata?.desciption || ""}
+</p>
               </p>
               {/* Content */}
-              <ul className="list-inline mb-0">
-                <li className="list-inline-item h6 me-3 mb-1 mb-sm-0">
-                  <i className="fas fa-star text-warning me-2" />
-                  4.5/5.0
-                </li>
-                <li className="list-inline-item h6 me-3 mb-1 mb-sm-0">
-                  <i className="fas fa-user-graduate text-orange me-2" />
-                  12k Enrolled
-                </li>
-                <li className="list-inline-item h6 me-3 mb-1 mb-sm-0">
-                  <i className="fas fa-signal text-success me-2" />
-                  All levels
-                </li>
-                <li className="list-inline-item h6 me-3 mb-1 mb-sm-0">
-                  <i className="bi bi-patch-exclamation-fill text-danger me-2" />
-                  Last updated 09/2021
-                </li>
-                <li className="list-inline-item h6 mb-0">
-                  <i className="fas fa-globe text-info me-2" />
-                  English
-                </li>
-              </ul>
+             
             </div>
 
             {/* Image Carousel */}
@@ -587,61 +592,7 @@ Page content START */}
                       hands-on examples that you can follow step by step.
                     </p>
                     {/* List content */}
-                    <h5 className="mt-4">What you’ll learn</h5>
-                    <ul className="list-group list-group-borderless mb-3">
-                      <li className="list-group-item h6 fw-light d-flex mb-0">
-                        <i className="fas fa-check-circle text-success me-2" />
-                        Digital marketing course introduction
-                      </li>
-                      <li className="list-group-item h6 fw-light d-flex mb-0">
-                        <i className="fas fa-check-circle text-success me-2" />
-                        Customer Life cycle
-                      </li>
-                      <li className="list-group-item h6 fw-light d-flex mb-0">
-                        <i className="fas fa-check-circle text-success me-2" />
-                        What is Search engine optimization(SEO)
-                      </li>
-                      <li className="list-group-item h6 fw-light d-flex mb-0">
-                        <i className="fas fa-check-circle text-success me-2" />
-                        Facebook ADS
-                      </li>
-                      <li className="list-group-item h6 fw-light d-flex mb-0">
-                        <i className="fas fa-check-circle text-success me-2" />
-                        Facebook Messenger Chatbot
-                      </li>
-                      <li className="list-group-item h6 fw-light d-flex mb-0">
-                        <i className="fas fa-check-circle text-success me-2" />
-                        Search engine optimization tools
-                      </li>
-                      <li className="list-group-item h6 fw-light d-flex mb-0">
-                        <i className="fas fa-check-circle text-success me-2" />
-                        Why SEO
-                      </li>
-                      <li className="list-group-item h6 fw-light d-flex mb-0">
-                        <i className="fas fa-check-circle text-success me-2" />
-                        URL Structure
-                      </li>
-                      <li className="list-group-item h6 fw-light d-flex mb-0">
-                        <i className="fas fa-check-circle text-success me-2" />
-                        Featured Snippet
-                      </li>
-                      <li className="list-group-item h6 fw-light d-flex mb-0">
-                        <i className="fas fa-check-circle text-success me-2" />
-                        SEO tips and tricks
-                      </li>
-                      <li className="list-group-item h6 fw-light d-flex mb-0">
-                        <i className="fas fa-check-circle text-success me-2" />
-                        Google tag manager
-                      </li>
-                    </ul>
-                    <p className="mb-0">
-                      As it so contrasted oh estimating instrument. Size like
-                      body someone had. Are conduct viewing boy minutes warrant
-                      the expense? Tolerably behavior may admit daughters
-                      offending her ask own. Praise effect wishes change way and
-                      any wanted. Lively use looked latter regard had. Do he it
-                      part more last in.{" "}
-                    </p>
+                   
                     {/* Course detail END */}
                   </div>
                   {/* Content END */}
@@ -1815,173 +1766,10 @@ Page content START */}
 
                   {/* Video END */}
                   {/* Course info START */}
-                  <div className="card card-body shadow p-4 mb-4">
-                    {/* Title */}
-                    <h4 className="mb-3">This course includes</h4>
-                    <ul className="list-group list-group-borderless">
-                      <li className="list-group-item d-flex justify-content-between align-items-center">
-                        <span className="h6 fw-light mb-0">
-                          <i className="fas fa-fw fa-book-open text-primary" />
-                          Lectures
-                        </span>
-                        <span>30</span>
-                      </li>
-                      <li className="list-group-item d-flex justify-content-between align-items-center">
-                        <span className="h6 fw-light mb-0">
-                          <i className="fas fa-fw fa-clock text-primary" />
-                          Duration
-                        </span>
-                        <span>4h 50m</span>
-                      </li>
-                      <li className="list-group-item d-flex justify-content-between align-items-center">
-                        <span className="h6 fw-light mb-0">
-                          <i className="fas fa-fw fa-signal text-primary" />
-                          Skills
-                        </span>
-                        <span>Beginner</span>
-                      </li>
-                      <li className="list-group-item d-flex justify-content-between align-items-center">
-                        <span className="h6 fw-light mb-0">
-                          <i className="fas fa-fw fa-globe text-primary" />
-                          Language
-                        </span>
-                        <span>English</span>
-                      </li>
-                      <li className="list-group-item d-flex justify-content-between align-items-center">
-                        <span className="h6 fw-light mb-0">
-                          <i className="fas fa-fw fa-user-clock text-primary" />
-                          Deadline
-                        </span>
-                        <span>Nov 30 2021</span>
-                      </li>
-                      <li className="list-group-item d-flex justify-content-between align-items-center">
-                        <span className="h6 fw-light mb-0">
-                          <i className="fas fa-fw fa-medal text-primary" />
-                          Certificate
-                        </span>
-                        <span>Yes</span>
-                      </li>
-                    </ul>
-                  </div>
+
                   {/* Course info END */}
                 </div>
-                <div className="col-md-6 col-lg-12">
-                  {/* Recently Viewed START */}
-                  <div className="card card-body shadow p-4 mb-4">
-                    {/* Title */}
-                    <h4 className="mb-3">Recently Viewed</h4>
-                    {/* Course item START */}
-                    <div className="row gx-3 mb-3">
-                      {/* Image */}
-                      <div className="col-4">
-                        <img
-                          className="rounded"
-                          src="assets/images/courses/4by3/21.jpg"
-                          alt
-                        />
-                      </div>
-                      {/* Info */}
-                      <div className="col-8">
-                        <h6 className="mb-0">
-                          <a href="#">Fundamentals of Business Analysis</a>
-                        </h6>
-                        <ul className="list-group list-group-borderless mt-1 d-flex justify-content-between">
-                          <li className="list-group-item px-0 d-flex justify-content-between">
-                            <span className="text-success">$130</span>
-                            <span className="h6 fw-light">
-                              4.5
-                              <i className="fas fa-star text-warning ms-1" />
-                            </span>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                    {/* Course item END */}
-                    {/* Course item START */}
-                    <div className="row gx-3">
-                      {/* Image */}
-                      <div className="col-4">
-                        <img
-                          className="rounded"
-                          src="assets/images/courses/4by3/18.jpg"
-                          alt
-                        />
-                      </div>
-                      {/* Info */}
-                      <div className="col-8">
-                        <h6 className="mb-0">
-                          <a href="#">The Complete Video Production Bootcamp</a>
-                        </h6>
-                        <ul className="list-group list-group-borderless mt-1 d-flex justify-content-between">
-                          <li className="list-group-item px-0 d-flex justify-content-between">
-                            <span className="text-success">$150</span>
-                            <span className="h6 fw-light">
-                              4.0
-                              <i className="fas fa-star text-warning ms-1" />
-                            </span>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                    {/* Course item END */}
-                  </div>
-                  {/* Recently Viewed END */}
-                  {/* Tags START */}
-                  <div className="card card-body shadow p-4">
-                    <h4 className="mb-3">Popular Tags</h4>
-                    <ul className="list-inline mb-0">
-                      <li className="list-inline-item">
-                        {" "}
-                        <a className="btn btn-outline-light btn-sm" href="#">
-                          blog
-                        </a>{" "}
-                      </li>
-                      <li className="list-inline-item">
-                        {" "}
-                        <a className="btn btn-outline-light btn-sm" href="#">
-                          business
-                        </a>{" "}
-                      </li>
-                      <li className="list-inline-item">
-                        {" "}
-                        <a className="btn btn-outline-light btn-sm" href="#">
-                          theme
-                        </a>{" "}
-                      </li>
-                      <li className="list-inline-item">
-                        {" "}
-                        <a className="btn btn-outline-light btn-sm" href="#">
-                          bootstrap
-                        </a>{" "}
-                      </li>
-                      <li className="list-inline-item">
-                        {" "}
-                        <a className="btn btn-outline-light btn-sm" href="#">
-                          data science
-                        </a>{" "}
-                      </li>
-                      <li className="list-inline-item">
-                        {" "}
-                        <a className="btn btn-outline-light btn-sm" href="#">
-                          web development
-                        </a>{" "}
-                      </li>
-                      <li className="list-inline-item">
-                        {" "}
-                        <a className="btn btn-outline-light btn-sm" href="#">
-                          tips
-                        </a>{" "}
-                      </li>
-                      <li className="list-inline-item">
-                        {" "}
-                        <a className="btn btn-outline-light btn-sm" href="#">
-                          machine learning
-                        </a>{" "}
-                      </li>
-                    </ul>
-                  </div>
-                  {/* Tags END */}
-                </div>
+
               </div>
               {/* Row End */}
             </div>

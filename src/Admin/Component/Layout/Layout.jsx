@@ -156,6 +156,11 @@ export default function Layout({ children }) {
   const handleDrawerClose = () => setOpen(false);
 
   const Theme = useContext(ThemeContext);
+console.log("Auth:", auth);
+console.log("Saved User:", savedUser);
+console.log("Current User:", currentUser);
+console.log("User Role:", userRole);
+
 
   return (
     <Box sx={{ display: "flex" }}>

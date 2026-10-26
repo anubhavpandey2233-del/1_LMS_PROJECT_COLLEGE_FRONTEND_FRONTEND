@@ -13,7 +13,6 @@ function Home(props) {
   const themedata = useContext(ThemeContext);
 
   const isdark = themedata.theme === "dark";
-  console.log(isdark);
 
   const navigate = useNavigate();
   const { data: courseData } = useGetallcourseQuery();
@@ -27,20 +26,21 @@ function Home(props) {
 
   const categoryState = useSelector((state) => state.category);
   const categories = categoryState?.category || [];
-  const topCategories = categories.filter((c) => c.parent_id === null);
+  const topCategories = categories.filter(
+    (category) =>
+      category.parent_id === null ||
+      category.parent_id === undefined ||
+      category.parent_id === ""
+  );
 
-  const [activeCategory, setActiveCategory] = useState(null);
-
-  useEffect(() => {
-    if (topCategories.length > 0 && !activeCategory) {
-      setActiveCategory(topCategories[0]._id);
-    }
-  }, [topCategories, activeCategory]);
+  const [activeCategory, setActiveCategory] = useState("All");
 
   const getDescendantCategoryIds = (parentId) => {
     const ids = [parentId];
     const checkSub = (pId) => {
-      const subs = categories.filter((c) => c.parent_id === pId);
+      const subs = categories.filter(
+        (category) => String(category.parent_id) === String(pId)
+      );
       subs.forEach((sub) => {
         ids.push(sub._id);
         checkSub(sub._id);
@@ -50,8 +50,14 @@ function Home(props) {
     return ids;
   };
 
-  const activeCategoryIds = activeCategory ? getDescendantCategoryIds(activeCategory) : [];
-  const filteredCourses = courses.filter((course) => activeCategoryIds.includes(course.categories_id));
+  const filteredCourses =
+    activeCategory === "All"
+      ? courses
+      : courses.filter((course) =>
+          getDescendantCategoryIds(activeCategory).some(
+            (id) => String(id) === String(course.categories_id)
+          )
+        );
 
   return (
     <main>
@@ -479,7 +485,7 @@ Counter START */}
                 <div className="ms-4 h6 fw-normal">
                   <div className="d-flex">
                     <h5 className="mb-0 fw-bold">{students}</h5>
-                    <span className="mb-0 h5">K+</span>
+                    <span className="mb-0 h5">+</span>
                   </div>
                   <p className="mb-0">Online Students</p>
                 </div>
@@ -514,106 +520,104 @@ Counter START */}
 Counter END */}
       {/* =======================
 Popular course START */}
-      <section>
+      <section className="py-5">
         <div className="container">
-          {/* Title */}
           <div className="row mb-4">
             <div className="col-lg-8 mx-auto text-center">
               <h2 className="fs-1">Most Popular Courses</h2>
-              <p className="mb-0">
-                Choose from hundreds of courses from specialist organizations
-              </p>
+              <p className="mb-0">Explore courses by category</p>
             </div>
           </div>
-          {/* Tabs START */}
+
+          {/* Category Tabs */}
           <ul
-            className="nav nav-pills nav-pills-bg-soft justify-content-sm-center mb-4 px-3"
+            className="nav nav-pills nav-pills-bg-soft justify-content-center flex-wrap mb-4 px-3"
             id="course-pills-tab"
             role="tablist"
           >
+            <li className="nav-item me-2 mb-2">
+              <button
+                className={`nav-link ${activeCategory === "All" ? "active" : ""}`}
+                onClick={() => setActiveCategory("All")}
+                type="button"
+                aria-pressed={activeCategory === "All"}
+              >
+                All
+              </button>
+            </li>
             {topCategories.map((cat) => (
-              <li key={cat._id} className="nav-item me-2 me-sm-5">
+              <li key={cat._id} className="nav-item me-2 mb-2">
                 <button
-                  className={`nav-link mb-2 mb-md-0 ${activeCategory === cat._id ? "active" : ""}`}
+                  className={`nav-link ${String(activeCategory) === String(cat._id) ? "active" : ""}`}
                   onClick={() => setActiveCategory(cat._id)}
                   type="button"
+                  aria-pressed={String(activeCategory) === String(cat._id)}
                 >
                   {cat.name}
                 </button>
               </li>
             ))}
           </ul>
-          {/* Tabs END */}
-          {/* Tabs content START */}
-          <div className="tab-content" id="course-pills-tabContent">
-            <div className="tab-pane fade show active" role="tabpanel">
-              <div className="row g-4">
-                {filteredCourses.length > 0 ? (
-                  filteredCourses.map((v) => {
-                    const imgUrl = v.course_img?.[0]?.url || "assets/images/courses/4by3/08.jpg";
-                    return (
-                      <div key={v._id} className="col-sm-6 col-lg-4 col-xl-3">
-                        <div className="card shadow h-100 cursor-pointer" onClick={() => navigate(`/course-details/${v._id}`)}>
-                          {/* Image */}
-                          <img
-                            src={imgUrl}
-                            className="card-img-top"
-                            alt="course image"
-                            style={{ height: "180px", objectFit: "cover" }}
-                          />
-                          {/* Card body */}
-                          <div className="card-body pb-0">
-                            {/* Badge and favorite */}
-                            <div className="d-flex justify-content-between mb-2">
-                              <span className="badge bg-purple bg-opacity-10 text-purple">
-                                All level
-                              </span>
-                              <span className="h6 mb-0">
-                                <i className="far fa-heart" />
-                              </span>
-                            </div>
-                            {/* Title */}
-                            <h5 className="card-title fw-normal">
-                              <span className="text-dark hover-primary">{v.name}</span>
-                            </h5>
-                            <p className="mb-2 text-truncate-2">
-                              {v.description || v.desciption}
-                            </p>
-                            {/* Rating star */}
-                            <ul className="list-inline mb-0">
-                              <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                              <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                              <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                              <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                              <li className="list-inline-item me-0 small"><i className="far fa-star text-warning" /></li>
-                              <li className="list-inline-item ms-2 h6 fw-light mb-0">4.0/5.0</li>
-                            </ul>
-                          </div>
-                          {/* Card footer */}
-                          <div className="card-footer pt-0 pb-3">
-                            <hr />
-                            <div className="d-flex justify-content-between">
-                              <span className="h6 fw-light mb-0">
-                                <i className="far fa-clock text-danger me-2" />
-                                {v.duration || "12h 56m"}
-                              </span>
-                              <span className="h6 fw-light mb-0">
-                                <i className="fas fa-table text-orange me-2" />
-                                {v.fees === 0 || !v.fees ? "Free" : `$${v.fees}`}
-                              </span>
-                            </div>
-                          </div>
+
+          {/* Filtered Course Cards */}
+          <div className="row g-4">
+            {filteredCourses.length > 0 ? (
+              filteredCourses.map((course) => {
+                const imgUrl =
+                  course.course_img?.[0]?.url ||
+                  "assets/images/courses/4by3/14.jpg";
+                const category = categories.find(
+                  (cat) => String(cat._id) === String(course.categories_id)
+                );
+
+                return (
+                  <div className="col-sm-6 col-lg-4 col-xl-3" key={course._id}>
+                    <div
+                      className="card h-100 action-trigger-hover border cursor-pointer"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => navigate(`/course-details/${course._id}`)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          navigate(`/course-details/${course._id}`);
+                        }
+                      }}
+                    >
+                      <img
+                        src={imgUrl}
+                        className="card-img-top"
+                        alt={course.name || "Course image"}
+                        style={{ height: "200px", objectFit: "cover" }}
+                      />
+                      <div className="card-body">
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                          <span className="badge bg-primary bg-opacity-10 text-primary">
+                            {category?.name || "General"}
+                          </span>
+                          <span className="badge bg-dark text-white">
+                            {course.fees === 0 || !course.fees
+                              ? "Free"
+                              : `₹${course.fees}`}
+                          </span>
                         </div>
+                        <h5 className="card-title mb-0">
+                          {course.name || "Untitled Course"}
+                        </h5>
                       </div>
-                    );
-                  })
-                ) : (
-                  <div className="col-12 text-center py-5">
-                    <p className="lead text-muted">No courses found in this category.</p>
+                    </div>
                   </div>
-                )}
+                );
+              })
+            ) : (
+              <div className="col-12 text-center py-4">
+                <p className="mb-0">
+                  {activeCategory === "All"
+                    ? "No courses available yet."
+                    : "No courses found in this category."}
+                </p>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </section>
@@ -645,42 +649,7 @@ Action box START */}
             </svg>
           </figure>
           {/* SVG decoration END */}
-          <div className="row">
-            <div className="col-12">
-              <div className="bg-info p-4 p-sm-5 rounded-3">
-                <div className="row position-relative">
-                  {/* Svg decoration */}
-                  <figure className="fill-white opacity-1 position-absolute top-50 start-0 translate-middle-y">
-                    <svg width="141px" height="141px">
-                      <path d="M140.520,70.258 C140.520,109.064 109.062,140.519 70.258,140.519 C31.454,140.519 -0.004,109.064 -0.004,70.258 C-0.004,31.455 31.454,-0.003 70.258,-0.003 C109.062,-0.003 140.520,31.455 140.520,70.258 Z" />
-                    </svg>
-                  </figure>
-                  {/* Action box */}
-                  <div className="col-11 mx-auto position-relative">
-                    <div className="row align-items-center">
-                      {/* Title */}
-                      <div className="col-lg-7">
-                        <h3 className="text-white">Become an Instructor!</h3>
-                        <p className="text-white mb-3 mb-lg-0">
-                          Speedily say has suitable disposal add boy. On forth
-                          doubt miles of child. Exercise joy man children
-                          rejoiced. Yet uncommonly his ten who diminution
-                          astonished.
-                        </p>
-                      </div>
-                      {/* Content and input */}
-                      <div className="col-lg-5 text-lg-end">
-                        <a href="#" className="btn btn-outline-warning mb-0">
-                          Start Teaching Today
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>{" "}
-                {/* Row END */}
-              </div>
-            </div>
-          </div>{" "}
+          
           {/* Row END */}
         </div>
       </section>
@@ -689,155 +658,153 @@ Action box END */}
       {/* =======================
 Trending courses START */}
       <section className="py-5">
-  <div className="container px-4">
-    {/* TITLE */}
-    <div className="row mb-4">
-      <div className="col-lg-8 mx-auto text-center">
-        <h2 className="fs-1">Our Trending Courses</h2>
-        <p>Check out most 🔥 courses in the market</p>
-      </div>
-    </div>
+        <div className="container px-4">
+          {/* TITLE */}
+          <div className="row mb-4">
+            <div className="col-lg-8 mx-auto text-center">
+              <h2 className="fs-1">Our Trending Courses</h2>
+              <p>Check out most 🔥 courses in the market</p>
+            </div>
+          </div>
 
-    {/* SWIPER */}
-    <Swiper
-      modules={[Navigation, Autoplay]}
-      navigation
-      spaceBetween={20}
-      autoplay={{ delay: 3000, disableOnInteraction: false }}
-      breakpoints={{
-        1200: { slidesPerView: 3 },
-        992: { slidesPerView: 3 },
-        768: { slidesPerView: 2 },
-        576: { slidesPerView: 1 },
-        0: { slidesPerView: 1 },
-      }}
-    >
-      {courses.slice(0, 10).map((v) => {
-        console.log("Course data:", v);
+          {/* SWIPER */}
+          <Swiper
+            modules={[Navigation, Autoplay]}
+            navigation
+            spaceBetween={20}
+            autoplay={{ delay: 3000, disableOnInteraction: false }}
+            breakpoints={{
+              1200: { slidesPerView: 3 },
+              992: { slidesPerView: 3 },
+              768: { slidesPerView: 2 },
+              576: { slidesPerView: 1 },
+              0: { slidesPerView: 1 },
+            }}
+          >
+            {courses.slice(0, 10).map((v) => {
+              const imgUrl =
+                v.course_img?.[0]?.url ||
+                "assets/images/courses/4by3/14.jpg";
 
-        const imgUrl =
-          v.course_img?.[0]?.url ||
-          "assets/images/courses/4by3/14.jpg";
+              const catObj = categories.find(
+                (c) => c._id === v.categories_id
+              );
 
-        const catObj = categories.find(
-          (c) => c._id === v.categories_id
-        );
+              const catName = catObj ? catObj.name : "General";
 
-        const catName = catObj ? catObj.name : "General";
+              return (
+                <SwiperSlide key={v._id}>
+                  <div>
+                    <div
+                      className="card action-trigger-hover border cursor-pointer"
+                      onClick={() => navigate(`/course-details/${v._id}`)}
+                    >
+                      {/* Course Image */}
+                      <img
+                        src={imgUrl}
+                        className="card-img-top"
+                        alt="course image"
+                        style={{ height: "200px", objectFit: "cover" }}
+                      />
 
-        return (
-          <SwiperSlide key={v._id}>
-            <div>
-              <div
-                className="card action-trigger-hover border cursor-pointer"
-                onClick={() => navigate(`/course-details/${v._id}`)}
-              >
-                {/* Course Image */}
-                <img
-                  src={imgUrl}
-                  className="card-img-top"
-                  alt="course image"
-                  style={{ height: "200px", objectFit: "cover" }}
-                />
-
-                {/* Ribbon */}
-                <div className="ribbon mt-3">
-                  <span>
-                    {v.fees === 0 || !v.fees ? "Free" : `$${v.fees}`}
-                  </span>
-                </div>
-
-                {/* Card Body */}
-                <div className="card-body pb-0">
-                  {/* Category and Favorite */}
-                  <div className="d-flex justify-content-between mb-3">
-                    <span className="hstack gap-2">
-                      <span className="badge bg-primary bg-opacity-10 text-primary">
-                        {catName}
-                      </span>
-                      <span className="badge bg-dark text-white">
-                        Beginner
-                      </span>
-                    </span>
-
-                    <span className="h6 fw-light mb-0">
-                      <i className="far fa-bookmark" />
-                    </span>
-                  </div>
-
-                  {/* Course Title */}
-                  <h5 className="card-title">
-                    <span className="text-dark hover-primary">
-                      {v.name}
-                    </span>
-                  </h5>
-
-                  {/* Rating */}
-                  <div className="d-flex justify-content-between mb-2">
-                    <div className="hstack gap-2">
-                      <p className="text-warning m-0">
-                        4.5
-                        <i className="fas fa-star text-warning ms-1" />
-                      </p>
-                      <span className="small">(6500)</span>
-                    </div>
-
-                    <div className="hstack gap-2">
-                      <p className="h6 fw-light mb-0">6500</p>
-                      <span className="small">(Student)</span>
-                    </div>
-                  </div>
-
-                  {/* Time and Lectures */}
-                  <div className="hstack gap-3">
-                    <span className="h6 fw-light mb-0">
-                      <i className="far fa-clock text-danger me-2" />
-                      {v.duration || "6h 56m"}
-                    </span>
-
-                    <span className="h6 fw-light mb-0">
-                      <i className="fas fa-table text-orange me-2" />
-                      15 lectures
-                    </span>
-                  </div>
-                </div>
-
-                {/* Card Footer */}
-                <div className="card-footer pt-0">
-                  <hr />
-
-                  <div className="d-flex justify-content-between align-items-center">
-                    {/* Instructor Avatar and Name */}
-                    <div className="d-flex align-items-center">
-                      <div className="avatar avatar-sm">
-                        <img
-                          className="avatar-img rounded-1"
-                          src={v.instructor?.pfp?.[0]?.url || "assets/images/avatar/10.jpg"}
-                          alt={v.instructor?.name || "Instructor"}
-                        />
+                      {/* Ribbon */}
+                      <div className="ribbon mt-3">
+                        <span>
+                          {v.fees === 0 || !v.fees ? "Free" : `$${v.fees}`}
+                        </span>
                       </div>
 
-                      <p className="mb-0 ms-2">
-                        <span className="h6 fw-light mb-0">
-                        {v.instructor?.name || "Instructor"}
-                        </span>
-                      </p>
-                    </div>
+                      {/* Card Body */}
+                      <div className="card-body pb-0">
+                        {/* Category and Favorite */}
+                        <div className="d-flex justify-content-between mb-3">
+                          <span className="hstack gap-2">
+                            <span className="badge bg-primary bg-opacity-10 text-primary">
+                              {catName}
+                            </span>
+                            <span className="badge bg-dark text-white">
+                              Beginner
+                            </span>
+                          </span>
 
-                    {/* Price */}
-                    <span className="text-success h5 mb-0">
-                      {v.fees === 0 || !v.fees ? "Free" : `$${v.fees}`}
-                    </span>
+                          <span className="h6 fw-light mb-0">
+                            <i className="far fa-bookmark" />
+                          </span>
+                        </div>
+
+                        {/* Course Title */}
+                        <h5 className="card-title">
+                          <span className="text-dark hover-primary">
+                            {v.name}
+                          </span>
+                        </h5>
+
+                        {/* Rating */}
+                        <div className="d-flex justify-content-between mb-2">
+                          <div className="hstack gap-2">
+                            <p className="text-warning m-0">
+                              4.5
+                              <i className="fas fa-star text-warning ms-1" />
+                            </p>
+                            <span className="small">(6500)</span>
+                          </div>
+
+                          <div className="hstack gap-2">
+                            <p className="h6 fw-light mb-0">6500</p>
+                            <span className="small">(Student)</span>
+                          </div>
+                        </div>
+
+                        {/* Time and Lectures */}
+                        <div className="hstack gap-3">
+                          <span className="h6 fw-light mb-0">
+                            <i className="far fa-clock text-danger me-2" />
+                            {v.duration || "6h 56m"}
+                          </span>
+
+                          <span className="h6 fw-light mb-0">
+                            <i className="fas fa-table text-orange me-2" />
+                            15 lectures
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Card Footer */}
+                      <div className="card-footer pt-0">
+                        <hr />
+
+                        <div className="d-flex justify-content-between align-items-center">
+                          {/* Instructor Avatar and Name */}
+                          <div className="d-flex align-items-center">
+                            <div className="avatar avatar-sm">
+                              <img
+                                className="avatar-img rounded-1"
+                                src={v.instructor?.pfp?.[0]?.url || "assets/images/avatar/10.jpg"}
+                                alt={v.instructor?.name || "Instructor"}
+                              />
+                            </div>
+
+                            <p className="mb-0 ms-2">
+                              <span className="h6 fw-light mb-0">
+                                {v.instructor?.name || "Instructor"}
+                              </span>
+                            </p>
+                          </div>
+
+                          {/* Price */}
+                          <span className="text-success h5 mb-0">
+                            {v.fees === 0 || !v.fees ? "Free" : `$${v.fees}`}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </div>
-          </SwiperSlide>
-        );
-      })}
-    </Swiper>
-  </div>
-</section>
+                </SwiperSlide>
+              );
+            })}
+          </Swiper>
+        </div>
+      </section>
       {/* =======================
 Trending courses END */}
       {/* =======================
