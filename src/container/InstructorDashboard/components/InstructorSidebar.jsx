@@ -58,17 +58,17 @@ function InstructorSidebar() {
                   <i className="bi bi-basket fa-fw me-2" />My course
                 </NavLink>
 
-                <NavLink to="/Instructor_Earning" className={getLinkClass}>
+                {/* <NavLink to="/Instructor_Earning" className={getLinkClass}>
                   <i className="bi bi-graph-up fa-fw me-2" />Earnings
-                </NavLink>
+                </NavLink> */}
                 
                 <NavLink to="/Instructor_Student_list" className={getLinkClass}>
                   <i className="bi bi-people fa-fw me-2" />Students
                 </NavLink>
                 
-                <NavLink to="/Instructor_Order" className={getLinkClass}>
+                {/* <NavLink to="/Instructor_Order" className={getLinkClass}>
                   <i className="bi bi-folder-check fa-fw me-2" />Orders
-                </NavLink>
+                </NavLink> */}
                 
                 <NavLink to="/Instructor_Review" className={getLinkClass}>
                   <i className="bi bi-star fa-fw me-2" />Reviews
