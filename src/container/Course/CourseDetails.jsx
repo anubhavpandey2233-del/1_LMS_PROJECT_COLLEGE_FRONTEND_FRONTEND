@@ -49,8 +49,15 @@ import { useFormik } from "formik";
 function CourseDetails(props) {
   const [rating, setRating] = useState();
   const params = useParams();
+
+
+  
+  
   const navigate = useNavigate();
   const auth = useSelector((state) => state.auth);
+
+  console.log("CURRENT USER:", auth?.user?.data);
+console.log("CURRENT ROLE:", auth?.user?.data?.role);
 
   const { data, isLoading } = useGetallcourseQuery();
   const { data: section } = useGetAllSectionQuery();
@@ -381,50 +388,104 @@ function CourseDetails(props) {
     window.location.href = certificate.data;
   };
 
-  const { data: review } = useGetAllreviewQuery();
-  const [addreview] = useAddreviewMutation();
-  const [updatereview] = useUpdatereviewMutation();
+  
+const {
+  data: review,
+  refetch: refetchReviews,
+} = useGetAllreviewQuery();
 
-  const isUserreview = review?.data?.some(
-    (v) => v?.user?._id === auth?.user?.data?._id,
-  );
-  console.log(isUserreview);
+const [addreview, { isLoading: isAddingReview }] =
+  useAddreviewMutation();
 
-  const coursereview = review?.data?.filter((v) => v.course === params._id);
-  // console.log(coursereview);
+const [updatereview] = useUpdatereviewMutation();
 
-  let avarageRating =
-    coursereview?.reduce((acc, v, i) => acc + v.rating, 0) /
-    coursereview?.length;
-  // console.log(avarageRating);
+const courseId = String(filerdata?._id || params?._id || "");
+const currentReviewUserId = String(auth?.user?.data?._id || "");
 
-  const formik = useFormik({
-    initialValues: {
-      description: "",
-    },
-    enableReinitialize: true,
-    onSubmit: async (values) => {
-      console.log(values);
+const allReviews = Array.isArray(review?.data) ? review.data : [];
 
-      let course_id = data?.data?.find((v) => v?._id === params._id);
+const filterReview = allReviews.filter((v) => {
+  const reviewCourseId = String(v?.course?._id ?? v?.course ?? "");
+  return reviewCourseId === courseId;
+});
+
+const isUserreview = filterReview.some(
+  (v) => String(v?.user?._id ?? v?.user ?? "") === currentReviewUserId
+);
+
+const averageRating =
+  filterReview.length > 0
+    ? filterReview.reduce((total, v) => total + Number(v.rating || 0), 0) /
+      filterReview.length
+    : 0;
+
+const totalStars = 5;
+
+const formik = useFormik({
+  initialValues: {
+    description: "",
+  },
+  enableReinitialize: true,
+  onSubmit: async (values, { resetForm }) => {
+    try {
+      if (!currentReviewUserId) {
+        alert("Please login first to submit a review.");
+        navigate("/login");
+        return;
+      }
+
+      if (!courseId) {
+        alert("Course details not found.");
+        return;
+      }
+
+      if (!Enroll_USER) {
+        alert("Please enroll in this course before submitting a review.");
+        return;
+      }
+
+      if (isUserreview) {
+        alert("You have already reviewed this course.");
+        return;
+      }
+
+      if (!rating || rating < 1 || rating > 5) {
+        alert("Please select a star rating.");
+        return;
+      }
+
+      if (!values.description.trim()) {
+        alert("Please write your review.");
+        return;
+      }
 
       await addreview({
-        user: auth?.user?.data?._id,
-        description: values.description,
-        course: course_id._id,
-        rating: rating,
-      });
-    },
-  });
+        course: courseId,
+        rating: Number(rating),
+        description: values.description.trim(),
+      }).unwrap();
 
-  const handleEditReview = (val) => {
-    console.log(val);
-  };
+      alert("Your review has been submitted successfully!");
 
-  let filterReview = review?.data?.filter((v) => v.course === params._id);
-  console.log(filterReview);
+      resetForm();
+      setRating(0);
+      await refetchReviews();
+    } catch (error) {
+      console.error("Review submission error:", error);
 
-  let totalStars = 5;
+      alert(
+        error?.data?.message ||
+        error?.data?.Message ||
+        "Unable to submit review. Please try again."
+      );
+    }
+  },
+});
+
+const handleEditReview = (val) => {
+  console.log(val);
+};
+
 
   const { handleSubmit, handleChange, handleBlur, values, errors, touched } =
     formik;
@@ -940,7 +1001,7 @@ Page content START */}
                         <div className="text-center">
                           {/* Info */}
                           <h2 className="mb-0">
-                            {avarageRating ? avarageRating : 0}
+                            {averageRating ? averageRating : 0}
                           </h2>
                           {/* Star */}
                           <div className="d-sm-flex mt-1 mt-md-0 align-items-center mx-6">
@@ -950,7 +1011,7 @@ Page content START */}
                                   <i
                                     key={index}
                                     className={
-                                      index < avarageRating
+                                      index < averageRating
                                         ? "fas fa-star text-warning"
                                         : "far fa-star text-warning"
                                     }

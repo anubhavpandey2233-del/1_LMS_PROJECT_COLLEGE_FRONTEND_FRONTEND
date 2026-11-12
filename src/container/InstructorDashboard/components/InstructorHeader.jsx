@@ -144,12 +144,12 @@ function InstructorHeader() {
 
                   <div className="d-flex align-items-center mt-2 mt-md-0">
                     <NavLink
-                      to="/Instructor_Create_Course"
-                      className="btn btn-success mb-0"
-                    >
-                      <i className="bi bi-graph-up fa-fw me-2" />
-                      Create a course
-                    </NavLink>
+  to="/admin/course"
+  className="btn btn-success mb-0"
+>
+  <i className="bi bi-plus-circle fa-fw me-2" />
+  Create a course
+</NavLink>
                   </div>
                 </div>
               </div>

@@ -192,13 +192,12 @@ Page content START */}
                         />
                       </div>
 
-                      <div className="col-12">
+                      {/* <div className="col-12">
                         <hr />
                         <h5>Social Media Profiles</h5>
                       </div>
 
-                      {/* Facebook */}
-                      <div className="col-md-4">
+                      
                         <label className="form-label">Facebook Profile</label>
                         <div className="input-group">
                           <span className="input-group-text"><i className="fab fa-facebook text-facebook"></i></span>
@@ -213,7 +212,7 @@ Page content START */}
                         </div>
                       </div>
 
-                      {/* Twitter */}
+                     
                       <div className="col-md-4">
                         <label className="form-label">Twitter Profile</label>
                         <div className="input-group">
@@ -229,7 +228,7 @@ Page content START */}
                         </div>
                       </div>
 
-                      {/* LinkedIn */}
+                      
                       <div className="col-md-4">
                         <label className="form-label">LinkedIn Profile</label>
                         <div className="input-group">
@@ -243,7 +242,7 @@ Page content START */}
                             placeholder="https://linkedin.com/in/username"
                           />
                         </div>
-                      </div>
+                      </div> */}
 
                       {/* Save Button */}
                       <div className="col-12 text-end">

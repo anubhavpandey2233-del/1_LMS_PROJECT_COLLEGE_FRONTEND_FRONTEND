@@ -24,6 +24,7 @@ import {
 } from "../../../redux/Api/Course.api";
 import Switch from "@mui/material/Switch";
 import { CheackAuth } from "../../../redux/slice/auth.slice";
+import { useNavigate } from "react-router-dom";
 
 function Course() {
   const cdata = useSelector((state) => state.category);
@@ -41,10 +42,17 @@ function Course() {
 
   const dispatch = useDispatch();
 
-  const handleClickOpen = () => {
-    setUpadateData(null);
-    setOpen(true);
-  };
+  const navigate = useNavigate();
+
+const handleClickOpen = () => {
+  const role = userData?.user?.data?.logtype;
+
+  if (role === "admin") {
+    navigate("/admin/course");
+  } else {
+    navigate("/Instructor_Create_Course");
+  }
+};
 
   const handleClose = () => {
     setOpen(false);
