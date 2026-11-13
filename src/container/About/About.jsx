@@ -1,6 +1,33 @@
-import React from 'react';
+import React, { useEffect, useState } from "react";
 
 function About() {
+
+
+  const [teachers, setTeachers] = useState([]);
+const [loadingTeachers, setLoadingTeachers] = useState(true);
+
+useEffect(() => {
+  const fetchTeachers = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/v2/user/teachers"
+      );
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setTeachers(result.data || []);
+      }
+    } catch (error) {
+      console.error("Teachers Fetch Error:", error);
+    } finally {
+      setLoadingTeachers(false);
+    }
+  };
+
+  fetchTeachers();
+}, []);
+
     return (
       <main>
   {/* =======================
@@ -291,23 +318,43 @@ Client START */}
           </div>
         </div>
         {/* Logo item */}
-        <div className="col-6 col-sm-4 col-lg-2">
-          <div className="p-4 grayscale text-center">
-            <img src="assets/images/client/shippable.svg" alt />
-          </div>
-        </div>
-        {/* Logo item */}
-        <div className="col-6 col-sm-4 col-lg-2">
-          <div className="p-4 grayscale text-center">
-            <img src="assets/images/client/algolia.svg" alt />
-          </div>
-        </div>
-        {/* Logo item */}
-        <div className="col-6 col-sm-4 col-lg-2">
-          <div className="p-4 grayscale text-center">
-            <img src="assets/images/client/importio.svg" alt />
-          </div>
-        </div>
+        {/* Shippable */}
+{/* <div className="col-6 col-sm-4 col-lg-2">
+  <div className="p-4 grayscale text-center">
+    <img
+      src="/assets/images/client/shippable.svg"
+      alt="Shippable"
+      className="img-fluid"
+      style={{ height: "40px", width: "auto" }}
+    />
+    <p className="mb-0 mt-2 fw-semibold">Shippable</p>
+  </div>
+
+</div> */}
+
+{/* Algolia */}
+<div className="col-6 col-sm-4 col-lg-2">
+  <div className="p-4 grayscale text-center">
+    <img
+      src="https://www.google.com/s2/favicons?domain=algolia.com&sz=128"
+      alt="Algolia"
+      className="img-fluid"
+      style={{ maxHeight: "45px" }}
+    />
+  </div>
+</div>
+
+{/* Import.io */}
+<div className="col-6 col-sm-4 col-lg-2">
+  <div className="p-4 grayscale text-center">
+    <img
+      src="https://www.google.com/s2/favicons?domain=import.io&sz=128"
+      alt="Import.io"
+      className="img-fluid"
+      style={{ maxHeight: "45px" }}
+    />
+  </div>
+</div>
         {/* Logo item */}
         <div className="col-6 col-sm-4 col-lg-2">
           <div className="p-4 grayscale text-center">
@@ -362,109 +409,61 @@ Award and Team START */}
           </ul>
         </div>
         {/* Our team START */}
-        <div className="col-md-8">
-          {/* Title and button */}
-          <div className="d-sm-flex justify-content-sm-between">
-            <h2 className="mb-0">Meet Our Team</h2>
-            <a href="#" className="btn btn-light mt-2">Join Team</a>
-          </div>
-          {/* Slider START */}
-          <div className="tiny-slider arrow-round arrow-creative arrow-blur arrow-hover mt-2 mt-sm-5">
-            <div className="tiny-slider-inner" data-autoplay="true" data-arrow="true" data-dots="false" data-items={4} data-items-lg={3} data-items-md={2}>
-              {/* Avatar item */}
-              <div className="text-center">
-                {/* Avatar */}
-                <div className="avatar avatar-xxl mb-3">
-                  <img className="avatar-img rounded-circle" src="assets/images/avatar/01.jpg" alt="avatar" />
+       
+<div className="col-md-8">
+  {/* Title and button */}
+  <div className="d-sm-flex justify-content-sm-between">
+    <h2 className="mb-0">Meet Our Team</h2>
+    {/* <a href="#" className="btn btn-light mt-2">Join Team</a> */}
+  </div>
+
+  {/* Slider START */}
+  <div className="tiny-slider arrow-round arrow-creative arrow-blur arrow-hover mt-2 mt-sm-5">
+    <div
+      className="tiny-slider-inner"
+      data-autoplay="true"
+      data-arrow="true"
+      data-dots="false"
+      data-items={4}
+      data-items-lg={3}
+      data-items-md={2}
+    >
+      {loadingTeachers ? (
+        <p className="text-center">Loading teachers...</p>
+      ) : teachers.length > 0 ? (
+        teachers.map((teacher) => (
+          <div className="text-center" key={teacher._id}>
+            {/* Teacher Avatar */}
+            <div className="avatar avatar-xxl mb-3">
+              {teacher.pfp?.[0]?.url ? (
+                <img
+                  className="avatar-img rounded-circle"
+                  src={teacher.pfp[0].url}
+                  alt={teacher.name}
+                />
+              ) : (
+                <div className="avatar-img rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fs-3">
+                  {teacher.name?.charAt(0).toUpperCase()}
                 </div>
-                {/* Info */}
-                <h6 className="mb-0"><a href="#">Carolyn Ortiz</a></h6>
-                <p className="mb-0 small">Designer</p>
-                {/* Rating */}
-                <ul className="list-inline mb-0">
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star-half-alt text-warning" /></li>
-                </ul>
-              </div>
-              {/* Avatar item */}
-              <div className="text-center">
-                {/* Avatar */}
-                <div className="avatar avatar-xxl mb-3">
-                  <img className="avatar-img rounded-circle" src="assets/images/avatar/02.jpg" alt="avatar" />
-                </div>
-                {/* Info */}
-                <h6 className="mb-0"><a href="#">Dennis Barrett</a></h6>
-                <p className="mb-0 small">IT professor</p>
-                {/* Rating */}
-                <ul className="list-inline mb-0">
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star-half-alt text-warning" /></li>
-                </ul>
-              </div>
-              {/* Avatar item */}
-              <div className="text-center">
-                {/* Avatar */}
-                <div className="avatar avatar-xxl mb-3">
-                  <img className="avatar-img rounded-circle" src="assets/images/avatar/09.jpg" alt="avatar" />
-                </div>
-                {/* Info */}
-                <h6 className="mb-0"><a href="#">Frances Guerrero</a></h6>
-                <p className="mb-0 small">Developer</p>
-                {/* Rating */}
-                <ul className="list-inline mb-0">
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                </ul>
-              </div>
-              {/* Avatar item */}
-              <div className="text-center">
-                {/* Avatar */}
-                <div className="avatar avatar-xxl mb-3">
-                  <img className="avatar-img rounded-circle" src="assets/images/avatar/04.jpg" alt="avatar" />
-                </div>
-                {/* Info */}
-                <h6 className="mb-0"><a href="#">Larry Lawson</a></h6>
-                <p className="mb-0 small">Designer</p>
-                {/* Rating */}
-                <ul className="list-inline mb-0">
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star-half-alt text-warning" /></li>
-                </ul>
-              </div>
-              {/* Avatar item */}
-              <div className="text-center">
-                {/* Avatar */}
-                <div className="avatar avatar-xxl mb-3">
-                  <img className="avatar-img rounded-circle" src="assets/images/avatar/10.jpg" alt="avatar" />
-                </div>
-                {/* Info */}
-                <h6 className="mb-0"><a href="#">Louis Crawford</a></h6>
-                <p className="mb-0 small">Medical Professor</p>
-                {/* Rating */}
-                <ul className="list-inline mb-0">
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star text-warning" /></li>
-                  <li className="list-inline-item me-0 small"><i className="fas fa-star-half-alt text-warning" /></li>
-                </ul>
-              </div>
+              )}
             </div>
-          </div>	
-          {/* Slider END */}
-        </div>
+
+            {/* Teacher Info */}
+            <h6 className="mb-0">
+              <span>{teacher.name}</span>
+            </h6>
+
+            <p className="mb-0 small">Instructor</p>
+          </div>
+        ))
+      ) : (
+        <p className="text-center">No instructors available.</p>
+      )}
+    </div>
+  </div>
+  {/* Slider END */}
+</div>
+
         {/* Our team END */}
       </div>
     </div>

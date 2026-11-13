@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { LogoutUser } from "../../redux/slice/auth.slice";
 import { NavLink, useNavigate } from "react-router-dom";
@@ -20,23 +20,31 @@ function UserDashboard(props) {
   const user = auth?.user?.data;
 
   const { data: course } = useGetallcourseQuery();
- const {
-  data: enrollment,
-  error: enrollmentError,
-  isLoading: enrollmentLoading,
-} = useGetenrollmentQuery();
 
-console.log("Enrollment API Response:", enrollment);
-console.log("Enrollment API Error:", enrollmentError);
-console.log("Enrollment Loading:", enrollmentLoading);
+  const {
+    data: enrollment,
+    error: enrollmentError,
+    isLoading: enrollmentLoading,
+  } = useGetenrollmentQuery();
+
+  console.log("Enrollment API Response:", enrollment);
+  console.log("Enrollment API Error:", enrollmentError);
+  console.log("Enrollment Loading:", enrollmentLoading);
+
   const { data: progress } = useGetAllprogessQuery();
 
   const userId = auth?.user?.data?._id;
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const coursesPerPage = 8;
 
   const normalizeId = (value) => {
     if (value && typeof value === "object") {
       return String(value._id ?? value.id ?? "");
     }
+
     return String(value ?? "");
   };
 
@@ -50,6 +58,7 @@ console.log("Enrollment Loading:", enrollmentLoading);
 
   const filterEnroll = enrollmentData.filter((v) => {
     const enrolledUserId = v?.user_id?._id ?? v?.user_id;
+
     return normalizeId(enrolledUserId) === normalizeId(userId);
   });
 
@@ -79,12 +88,12 @@ console.log("Enrollment Loading:", enrollmentLoading);
     purchasedCourseIds.includes(normalizeId(v?._id))
   );
 
- console.log("Logged-in User ID:", userId);
-console.log("Enrollment API Data:", enrollment?.data);
-console.log("All Course API Data:", course?.data);
-console.log("Filtered Enrollments:", filterEnroll);
-console.log("Purchased Course IDs:", purchasedCourseIds);
-console.log("Filtered Courses:", filterCourses);
+  console.log("Logged-in User ID:", userId);
+  console.log("Enrollment API Data:", enrollment?.data);
+  console.log("All Course API Data:", course?.data);
+  console.log("Filtered Enrollments:", filterEnroll);
+  console.log("Purchased Course IDs:", purchasedCourseIds);
+  console.log("Filtered Courses:", filterCourses);
 
   const userProgress = filterEnroll.flatMap((enroll) =>
     Array.isArray(enroll?.progress) ? enroll.progress : []
@@ -96,13 +105,41 @@ console.log("Filtered Courses:", filterCourses);
   );
 
   const totalleactue = userProgress.reduce(
-    (n, v) => n + Number(v?.totalleactue || 0),
+    (n, v) => n + Number(v?.totalLecture || 0),
     0
   );
 
   const achievedCertificates = userProgress.filter(
-    (v) => Number(v?.prercentage) === 100
+    (v) => Number(v?.percentage) === 100
   ).length;
+
+  // Search Courses
+  const searchedCourses = filterCourses.filter((v) =>
+    String(v?.name ?? "")
+      .toLowerCase()
+      .includes(searchTerm.trim().toLowerCase())
+  );
+
+  // Pagination
+  const totalCourses = searchedCourses.length;
+  const totalPages = Math.ceil(totalCourses / coursesPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [totalCourses, searchTerm]);
+
+  const startIndex = (currentPage - 1) * coursesPerPage;
+
+  const currentCourses = searchedCourses.slice(
+    startIndex,
+    startIndex + coursesPerPage
+  );
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
   return (
     <div>
@@ -121,6 +158,7 @@ console.log("Filtered Courses:", filterCourses);
                       <span className="display-6 lh-1 text-orange mb-0">
                         <i className="fas fa-tv fa-fw" />
                       </span>
+
                       <div className="ms-4">
                         <div className="d-flex">
                           <h5
@@ -132,6 +170,7 @@ console.log("Filtered Courses:", filterCourses);
                             {filterCourses.length}
                           </h5>
                         </div>
+
                         <p className="mb-0 h6 fw-light">Total Courses</p>
                       </div>
                     </div>
@@ -142,6 +181,7 @@ console.log("Filtered Courses:", filterCourses);
                       <span className="display-6 lh-1 text-purple mb-0">
                         <i className="fas fa-clipboard-check fa-fw" />
                       </span>
+
                       <div className="ms-4">
                         <div className="d-flex">
                           <h5
@@ -153,6 +193,7 @@ console.log("Filtered Courses:", filterCourses);
                             {completedLessons}/{totalleactue}
                           </h5>
                         </div>
+
                         <p className="mb-0 h6 fw-light">Complete lessons</p>
                       </div>
                     </div>
@@ -163,6 +204,7 @@ console.log("Filtered Courses:", filterCourses);
                       <span className="display-6 lh-1 text-success mb-0">
                         <i className="fas fa-medal fa-fw" />
                       </span>
+
                       <div className="ms-4">
                         <div className="d-flex">
                           <h5
@@ -174,6 +216,7 @@ console.log("Filtered Courses:", filterCourses);
                             {achievedCertificates}
                           </h5>
                         </div>
+
                         <p className="mb-0 h6 fw-light">
                           Achieved Certificates
                         </p>
@@ -200,7 +243,10 @@ console.log("Filtered Courses:", filterCourses);
                               type="search"
                               placeholder="Search"
                               aria-label="Search"
+                              value={searchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
                             />
+
                             <button
                               className="btn bg-transparent px-2 py-0 position-absolute top-50 end-0 translate-middle-y"
                               type="submit"
@@ -221,12 +267,15 @@ console.log("Filtered Courses:", filterCourses);
                               >
                                 Course Title
                               </th>
+
                               <th scope="col" className="border-0">
                                 Total Lectures
                               </th>
+
                               <th scope="col" className="border-0">
                                 Completed Lecture
                               </th>
+
                               <th scope="col" className="border-0 rounded-end">
                                 Action
                               </th>
@@ -234,14 +283,16 @@ console.log("Filtered Courses:", filterCourses);
                           </thead>
 
                           <tbody>
-                            {filterCourses.length === 0 ? (
+                            {currentCourses.length === 0 ? (
                               <tr>
                                 <td colSpan={4} className="text-center py-4">
-                                  No enrolled courses found.
+                                  {searchTerm.trim()
+                                    ? "No matching courses found."
+                                    : "No enrolled courses found."}
                                 </td>
                               </tr>
                             ) : (
-                              filterCourses.map((v) => {
+                              currentCourses.map((v) => {
                                 const progess = filterEnroll
                                   .flatMap((p) =>
                                     Array.isArray(p?.progress)
@@ -255,8 +306,20 @@ console.log("Filtered Courses:", filterCourses);
                                       ) === normalizeId(v?._id)
                                   );
 
-                                const percentage = Number(
-                                  progess?.prercentage || 0
+                                const percentage = Math.min(
+                                  100,
+                                  Math.max(
+                                    0,
+                                    Number(progess?.percentage ?? 0) || 0
+                                  )
+                                );
+
+                                const totalLectures = Number(
+                                  progess?.totalLecture ?? 0
+                                );
+
+                                const completedLectures = Number(
+                                  progess?.completedLectures ?? 0
                                 );
 
                                 return (
@@ -281,7 +344,9 @@ console.log("Filtered Courses:", filterCourses);
 
                                         <div className="mb-0 ms-2">
                                           <h6>
-                                            <NavLink to={`/course-details/${v._id}`}>
+                                            <NavLink
+                                              to={`/course-details/${v._id}`}
+                                            >
                                               {v.name}
                                             </NavLink>
                                           </h6>
@@ -304,10 +369,7 @@ console.log("Filtered Courses:", filterCourses);
                                                 className="progress-bar progress-bar-striped progress-bar-animated"
                                                 role="progressbar"
                                                 style={{
-                                                  width: `${Math.min(
-                                                    100,
-                                                    Math.max(0, percentage)
-                                                  )}%`,
+                                                  width: `${percentage}%`,
                                                 }}
                                                 aria-valuenow={percentage}
                                                 aria-valuemin={0}
@@ -319,13 +381,9 @@ console.log("Filtered Courses:", filterCourses);
                                       </div>
                                     </td>
 
-                                    <td>
-                                      {progess?.totalleactue ?? 0}
-                                    </td>
+                                    <td>{totalLectures}</td>
 
-                                    <td>
-                                      {progess?.completedLectures ?? 0}
-                                    </td>
+                                    <td>{completedLectures}</td>
 
                                     <td>
                                       {percentage === 100 ? (
@@ -366,41 +424,76 @@ console.log("Filtered Courses:", filterCourses);
 
                       <div className="d-sm-flex justify-content-sm-between align-items-sm-center mt-4 mt-sm-3">
                         <p className="mb-0 text-center text-sm-start">
-                          Showing 1 to 8 of 20 entries
+                          Showing {totalCourses > 0 ? startIndex + 1 : 0} to{" "}
+                          {Math.min(
+                            startIndex + coursesPerPage,
+                            totalCourses
+                          )}{" "}
+                          of {totalCourses} entries
                         </p>
 
-                        <nav
-                          className="d-flex justify-content-center mb-0"
-                          aria-label="navigation"
-                        >
-                          <ul className="pagination pagination-sm pagination-primary-soft mb-0 pb-0">
-                            <li className="page-item mb-0">
-                              <a className="page-link" href="#" tabIndex={-1}>
-                                <i className="fas fa-angle-left" />
-                              </a>
-                            </li>
-                            <li className="page-item mb-0">
-                              <a className="page-link" href="#">
-                                1
-                              </a>
-                            </li>
-                            <li className="page-item mb-0 active">
-                              <a className="page-link" href="#">
-                                2
-                              </a>
-                            </li>
-                            <li className="page-item mb-0">
-                              <a className="page-link" href="#">
-                                3
-                              </a>
-                            </li>
-                            <li className="page-item mb-0">
-                              <a className="page-link" href="#">
-                                <i className="fas fa-angle-right" />
-                              </a>
-                            </li>
-                          </ul>
-                        </nav>
+                        {totalCourses > 0 && (
+                          <nav
+                            className="d-flex justify-content-center mb-0"
+                            aria-label="navigation"
+                          >
+                            <ul className="pagination pagination-sm pagination-primary-soft mb-0 pb-0">
+                              <li
+                                className={`page-item mb-0 ${
+                                  currentPage === 1 ? "disabled" : ""
+                                }`}
+                              >
+                                <button
+                                  type="button"
+                                  className="page-link"
+                                  disabled={currentPage === 1}
+                                  onClick={() =>
+                                    handlePageChange(currentPage - 1)
+                                  }
+                                >
+                                  <i className="fas fa-angle-left" />
+                                </button>
+                              </li>
+
+                              {Array.from(
+                                { length: totalPages },
+                                (_, index) => index + 1
+                              ).map((page) => (
+                                <li
+                                  key={page}
+                                  className={`page-item mb-0 ${
+                                    currentPage === page ? "active" : ""
+                                  }`}
+                                >
+                                  <button
+                                    type="button"
+                                    className="page-link"
+                                    onClick={() => handlePageChange(page)}
+                                  >
+                                    {page}
+                                  </button>
+                                </li>
+                              ))}
+
+                              <li
+                                className={`page-item mb-0 ${
+                                  currentPage === totalPages ? "disabled" : ""
+                                }`}
+                              >
+                                <button
+                                  type="button"
+                                  className="page-link"
+                                  disabled={currentPage === totalPages}
+                                  onClick={() =>
+                                    handlePageChange(currentPage + 1)
+                                  }
+                                >
+                                  <i className="fas fa-angle-right" />
+                                </button>
+                              </li>
+                            </ul>
+                          </nav>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -415,6 +508,7 @@ console.log("Filtered Courses:", filterCourses);
 }
 
 export default UserDashboard;
+
 
 
 

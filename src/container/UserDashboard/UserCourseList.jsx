@@ -1,9 +1,9 @@
-
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { NavLink } from "react-router-dom";
 import { useGetallcourseQuery } from "../../redux/Api/Course.api";
 import { useGetenrollmentQuery } from "../../redux/Api/enrollment.api";
+import { useAddgenerateCertificateMutation } from "../../redux/Api/certificate.api";
 import Carousel from "react-material-ui-carousel";
 import UserHeader from "./componets/UserHeader";
 import UserSildeBar from "./componets/UserSildeBar";
@@ -11,6 +11,14 @@ import UserSildeBar from "./componets/UserSildeBar";
 function UserCourseList() {
   const auth = useSelector((state) => state.auth);
   const userId = auth?.user?.data?._id;
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const coursesPerPage = 8;
+
+  const [addcertificate] = useAddgenerateCertificateMutation();
+  const [generatingCertificateId, setGeneratingCertificateId] = useState(null);
 
   const {
     data: course,
@@ -41,16 +49,85 @@ function UserCourseList() {
     : [];
 
   const filterEnroll = enrollmentData.filter(
-    (item) => normalizeId(item?.user_id) === normalizeId(userId)
+    (item) =>
+      normalizeId(item?.user_id?._id ?? item?.user_id) ===
+      normalizeId(userId)
   );
 
   const purchasedCourseIds = filterEnroll
-    .map((item) => normalizeId(item?.course_id))
+    .map((item) =>
+      normalizeId(item?.course_id?._id ?? item?.course_id)
+    )
     .filter(Boolean);
 
   const filterCourses = courseData.filter((item) =>
     purchasedCourseIds.includes(normalizeId(item?._id))
   );
+
+  // Search courses by name
+  const searchedCourses = filterCourses.filter((item) =>
+    String(item?.name ?? "")
+      .toLowerCase()
+      .includes(searchTerm.trim().toLowerCase())
+  );
+
+  const totalCourses = searchedCourses.length;
+  const totalPages = Math.ceil(totalCourses / coursesPerPage);
+
+  // Reset pagination when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  // Keep current page valid when course list changes
+  useEffect(() => {
+    if (totalPages === 0) {
+      setCurrentPage(1);
+    } else if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
+  const startIndex = (currentPage - 1) * coursesPerPage;
+
+  const currentCourses = searchedCourses.slice(
+    startIndex,
+    startIndex + coursesPerPage
+  );
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const handleCertificate = async (courseId) => {
+    if (generatingCertificateId) {
+      return;
+    }
+
+    try {
+      setGeneratingCertificateId(courseId);
+
+      const certificate = await addcertificate({
+        course: courseId,
+        user: userId,
+        grade: "A+",
+        issue_date: Date.now(),
+      }).unwrap();
+
+      if (certificate?.data) {
+        window.open(certificate.data, "_blank");
+      }
+    } catch (error) {
+      console.error("Certificate generation error:", error);
+      alert(
+        error?.data?.message || "Unable to generate certificate"
+      );
+    } finally {
+      setGeneratingCertificateId(null);
+    }
+  };
 
   if (isCourseLoading || isEnrollmentLoading) {
     return (
@@ -107,7 +184,11 @@ function UserCourseList() {
                             className="form-control pe-5 bg-transparent"
                             type="search"
                             placeholder="Search"
-                            aria-label="Search"
+                            aria-label="Search courses"
+                            value={searchTerm}
+                            onChange={(event) =>
+                              setSearchTerm(event.target.value)
+                            }
                           />
 
                           <button
@@ -140,37 +221,41 @@ function UserCourseList() {
                         </thead>
 
                         <tbody>
-                          {filterCourses.length > 0 ? (
-                            filterCourses.map((v) => {
+                          {currentCourses.length > 0 ? (
+                            currentCourses.map((v) => {
                               const currentEnrollment = filterEnroll.find(
                                 (item) =>
-                                  normalizeId(item?.course_id) ===
-                                  normalizeId(v?._id)
+                                  normalizeId(
+                                    item?.course_id?._id ?? item?.course_id
+                                  ) === normalizeId(v?._id)
                               );
 
-                              const currentProgress =
-                                currentEnrollment?.progress ?? {};
+                              const currentProgress = Array.isArray(
+                                currentEnrollment?.progress
+                              )
+                                ? currentEnrollment.progress.find(
+                                  (item) =>
+                                    normalizeId(
+                                      item?.course_id?._id ??
+                                      item?.course_id
+                                    ) === normalizeId(v?._id)
+                                )
+                                : null;
 
                               const percentage = Math.min(
                                 100,
                                 Math.max(
                                   0,
-                                  Number(
-                                    currentProgress.percentage ??
-                                      currentProgress.prercentage ??
-                                      0
-                                  ) || 0
+                                  Number(currentProgress?.percentage ?? 0) || 0
                                 )
                               );
 
                               const totalLectures = Number(
-                                currentProgress.totalLectures ??
-                                  currentProgress.totalleactue ??
-                                  0
+                                currentProgress?.totalLecture ?? 0
                               );
 
                               const completedLectures = Number(
-                                currentProgress.completedLectures ?? 0
+                                currentProgress?.completedLectures ?? 0
                               );
 
                               const courseImages = Array.isArray(v?.course_img)
@@ -279,6 +364,20 @@ function UserCourseList() {
                                           <i className="bi bi-arrow-repeat me-1" />
                                           Restart
                                         </NavLink>
+
+                                        <button
+                                          type="button"
+                                          className="btn btn-sm btn-primary me-1 mb-1"
+                                          onClick={() =>
+                                            handleCertificate(v._id)
+                                          }
+                                          disabled={generatingCertificateId === v._id}
+                                        >
+                                          <i className="bi bi-award me-1" />
+                                          {generatingCertificateId === v._id
+                                            ? "Generating..."
+                                            : "Certificate"}
+                                        </button>
                                       </>
                                     ) : (
                                       <NavLink
@@ -296,7 +395,9 @@ function UserCourseList() {
                           ) : (
                             <tr>
                               <td colSpan={4} className="text-center py-4">
-                                You haven't enrolled in any courses yet.
+                                {searchTerm.trim()
+                                  ? "No courses found matching your search."
+                                  : "You haven't enrolled in any courses yet."}
                               </td>
                             </tr>
                           )}
@@ -306,9 +407,71 @@ function UserCourseList() {
 
                     <div className="d-sm-flex justify-content-sm-between align-items-sm-center mt-4 mt-sm-3">
                       <p className="mb-0 text-center text-sm-start">
-                        Showing {filterCourses.length > 0 ? 1 : 0} to{" "}
-                        {filterCourses.length} of {filterCourses.length} courses
+                        Showing{" "}
+                        {totalCourses > 0 ? startIndex + 1 : 0} to{" "}
+                        {Math.min(
+                          startIndex + coursesPerPage,
+                          totalCourses
+                        )}{" "}
+                        of {totalCourses} courses
                       </p>
+
+                      {totalCourses > 0 && (
+                        <nav aria-label="Course pagination">
+                          <ul className="pagination pagination-sm mb-0">
+                            <li
+                              className={`page-item mb-0 ${currentPage === 1 ? "disabled" : ""
+                                }`}
+                            >
+                              <button
+                                type="button"
+                                className="page-link"
+                                onClick={() =>
+                                  handlePageChange(currentPage - 1)
+                                }
+                                disabled={currentPage === 1}
+                              >
+                                <i className="fas fa-angle-left" />
+                              </button>
+                            </li>
+
+                            {Array.from(
+                              { length: totalPages },
+                              (_, index) => index + 1
+                            ).map((page) => (
+                              <li
+                                key={page}
+                                className={`page-item mb-0 ${currentPage === page ? "active" : ""
+                                  }`}
+                              >
+                                <button
+                                  type="button"
+                                  className="page-link"
+                                  onClick={() => handlePageChange(page)}
+                                >
+                                  {page}
+                                </button>
+                              </li>
+                            ))}
+
+                            <li
+                              className={`page-item mb-0 ${currentPage === totalPages ? "disabled" : ""
+                                }`}
+                            >
+                              <button
+                                type="button"
+                                className="page-link"
+                                onClick={() =>
+                                  handlePageChange(currentPage + 1)
+                                }
+                                disabled={currentPage === totalPages}
+                              >
+                                <i className="fas fa-angle-right" />
+                              </button>
+                            </li>
+                          </ul>
+                        </nav>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -322,6 +485,8 @@ function UserCourseList() {
 }
 
 export default UserCourseList;
+
+
 
 
 

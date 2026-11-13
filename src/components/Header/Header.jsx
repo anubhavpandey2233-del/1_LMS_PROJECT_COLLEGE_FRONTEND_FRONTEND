@@ -82,21 +82,21 @@ function Header() {
     themedata.toggletheme(themedata.theme);
   };
 
- const handleProfile = () => {
-  console.log("User data:", auth?.user);
-  console.log("Role:", userRole);
+  const handleProfile = () => {
+    console.log("User data:", auth?.user);
+    console.log("Role:", userRole);
 
-  if (userRole === "admin") {
-    navigation("/instructor-dashboard");
-  } else if (
-    userRole === "instructor" ||
-    userRole === "teacher"
-  ) {
-    navigation("/instructor-dashboard");
-  } else {
-    navigation("/user-dashboard");
-  }
-};
+    if (userRole === "admin") {
+      navigation("/instructor-dashboard");
+    } else if (
+      userRole === "instructor" ||
+      userRole === "teacher"
+    ) {
+      navigation("/instructor-dashboard");
+    } else {
+      navigation("/user-dashboard");
+    }
+  };
 
   const handleLogout = async () => {
     const userId = user?._id;
@@ -165,8 +165,10 @@ function Header() {
   return (
     <header className="navbar-light navbar-sticky header-static">
       <nav className="navbar navbar-expand-xl">
-        <div className="container-fluid px-3 px-xl-5">
-          <NavLink className="navbar-brand" to="/">
+        <div className="container-fluid px-3 px-xl-4">
+
+          {/* Logo */}
+          <NavLink className="navbar-brand flex-shrink-0" to="/">
             <img
               className="light-mode-item navbar-brand-item"
               src="/assets/images/logo.svg"
@@ -174,6 +176,7 @@ function Header() {
             />
           </NavLink>
 
+          {/* Mobile Menu Button */}
           <button
             className="navbar-toggler ms-auto"
             type="button"
@@ -190,11 +193,14 @@ function Header() {
             </span>
           </button>
 
+          {/* Navbar Content */}
           <div
-            className="navbar-collapse w-100 collapse"
+            className="navbar-collapse collapse w-100"
             id="navbarCollapse"
           >
-            <ul className="navbar-nav navbar-nav-scroll me-auto">
+
+            {/* Category */}
+            <ul className="navbar-nav navbar-nav-scroll me-xl-3 mb-0">
               <li className="nav-item dropdown dropdown-menu-shadow-stacked">
                 <a
                   className="nav-link rounded-3 text-primary px-3 py-3 py-xl-0"
@@ -228,7 +234,8 @@ function Header() {
               </li>
             </ul>
 
-            <ul className="navbar-nav navbar-nav-scroll me-auto">
+            {/* Main Navigation Links */}
+            <ul className="navbar-nav navbar-nav-scroll ms-xl-auto me-xl-3 mb-0">
               <li className="nav-item">
                 <NavLink className="nav-link" to="/about">
                   About Us
@@ -254,88 +261,89 @@ function Header() {
               </li>
             </ul>
 
-            <MaterialUISwitch
-              sx={{ m: 1 }}
-              checked={themedata.theme === "dark"}
-              onChange={handleChange}
-              inputProps={{
-                "aria-label": "Toggle dark mode",
-              }}
-            />
+            {/* Theme and Cart */}
+            <div className="d-flex align-items-center flex-shrink-0 gap-2 my-2 my-xl-0">
+              <MaterialUISwitch
+                sx={{ m: 1 }}
+                checked={themedata.theme === "dark"}
+                onChange={handleChange}
+                inputProps={{
+                  "aria-label": "Toggle dark mode",
+                }}
+              />
 
-            <div className="nav my-3 my-xl-0 px-4 flex-nowrap align-items-center">
               <button
                 type="button"
-                className="btn btn-link nav-item p-0"
+                className="btn btn-link p-2"
                 aria-label="Shopping cart"
                 onClick={() => navigation("/cart")}
               >
                 <ShoppingCartIcon />
               </button>
             </div>
-          </div>
 
-          <div className="dropdown ms-1 ms-lg-0 d-flex align-items-center">
-            {user ? (
-              <>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="btn btn-sm btn-primary-soft me-3 mb-0 border-primary rounded"
-                  style={{
-                    padding: "8px 10px",
-                    fontSize: "15px",
-                  }}
-                >
-                  Sign Out
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleProfile}
-                  className="btn p-0 border-0 bg-transparent"
-                  aria-label="Open profile"
-                >
-                  <img
-                    className="avatar avatar-md rounded-circle me-3 flex-shrink-0"
-                    src={
-                      user?.pfp?.[0]?.url ||
-                      "/assets/images/avatar/01.jpg"
-                    }
-                    alt="Profile"
+            {/* Sign Out and Profile */}
+            <div className="d-flex align-items-center flex-shrink-0 gap-2 ms-xl-3 my-2 my-xl-0">
+              {user ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="btn btn-sm btn-primary-soft border-primary rounded mb-0 flex-shrink-0"
                     style={{
-                      width: "48px",
-                      height: "48px",
-                      objectFit: "cover",
+                      padding: "8px 12px",
+                      fontSize: "15px",
+                      whiteSpace: "nowrap",
                     }}
-                  />
-                </button>
-              </>
-            ) : (
-              <div className="d-sm-flex align-items-center justify-content-center justify-content-lg-start">
-                <NavLink
-                  className="btn btn-sm btn-primary-soft me-2 mb-0 border-primary"
-                  style={{
-                    padding: "6px 8px",
-                    fontSize: "15px",
-                  }}
-                  to="/Auth"
-                >
-                  Sign in as User
-                </NavLink>
+                  >
+                    Sign Out
+                  </button>
 
-                <NavLink
-                  className="btn btn-sm btn-primary-soft me-2 mb-0 border-primary"
-                  style={{
-                    padding: "6px 8px",
-                    fontSize: "15px",
-                  }}
-                  to="/Auth/Instructor"
-                >
-                  Sign in as Instructor
-                </NavLink>
-              </div>
-            )}
+                  <button
+                    type="button"
+                    onClick={handleProfile}
+                    className="btn p-0 border-0 bg-transparent flex-shrink-0"
+                    aria-label="Open profile"
+                  >
+                    <img
+                      className="avatar avatar-md rounded-circle"
+                      src={
+                        user?.pfp?.[0]?.url ||
+                        "/assets/images/avatar/01.jpg"
+                      }
+                      alt="Profile"
+                      style={{
+                        width: "44px",
+                        height: "44px",
+                        objectFit: "cover",
+                      }}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src =
+                          "/assets/images/avatar/01.jpg";
+                      }}
+                    />
+                  </button>
+                </>
+              ) : (
+                <div className="d-flex flex-wrap align-items-center gap-2">
+                  <NavLink
+                    className="btn btn-sm btn-primary-soft border-primary mb-0"
+                    to="/Auth"
+                  >
+                    Sign in as User
+                  </NavLink>
+
+                  <NavLink
+                    className="btn btn-sm btn-primary-soft border-primary mb-0"
+                    to="/Auth/Instructor"
+                  >
+                    Sign in as Instructor
+                  </NavLink>
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
       </nav>

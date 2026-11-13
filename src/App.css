@@ -870,3 +870,6 @@ footer .list-inline-item a.text-linkedin svg {
     grid-column: 2;
   }
 }
+.table thead th {
+  color: #ffffff !important;
+}

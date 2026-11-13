@@ -80,17 +80,19 @@ function InstructorSidebar() {
 
                 {/* Placeholder/Static Actions */}
                 <NavLink to="/user-profilEdit" className={getLinkClass}>
-  <i className="bi bi-pencil-square fa-fw me-2" />
-  Edit Profile
-</NavLink>
+                  <i className="bi bi-pencil-square fa-fw me-2" />
+                  Edit Profile
+                </NavLink>
 
-                <a className="list-group-item cursor-pointer" href="#settings-coming-soon">
-                  <i className="bi bi-gear fa-fw me-2" />Settings
-                </a>
+                <NavLink to="/instructor-settings" className={getLinkClass}>
+                  <i className="bi bi-gear fa-fw me-2" />
+                  Settings
+                </NavLink>
 
-                <a className="list-group-item cursor-pointer" href="#delete-profile-coming-soon">
-                  <i className="bi bi-trash fa-fw me-2" />Delete Profile
-                </a>
+                <NavLink to="/instructor-delete-profile" className={getLinkClass}>
+                  <i className="bi bi-trash fa-fw me-2" />
+                  Delete Profile
+                </NavLink>
 
                 {/* Logout Trigger button */}
                 <button

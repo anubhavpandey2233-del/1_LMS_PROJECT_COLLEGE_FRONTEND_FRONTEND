@@ -217,6 +217,38 @@ export const editProfile = createAsyncThunk(
   }
 );
 
+
+
+export const deleteProfileImage = createAsyncThunk(
+  'user/delete-profile-image',
+  async (_id, { dispatch, rejectWithValue }) => {
+    try {
+      const response = await axiosinstance.delete(
+        `user/delete-profile-image/${_id}`
+      );
+
+      if (response.data.sucess) {
+        dispatch(setalert({
+          text: response.data.Message,
+          variant: 'success'
+        }));
+
+        return response.data.data;
+      }
+
+      return rejectWithValue(
+        response.data.Message || 'Profile image deletion failed'
+      );
+    } catch (error) {
+      const message = getErrorMessage(error);
+      dispatch(setalert({ text: message, variant: 'error' }));
+      return rejectWithValue(message);
+    }
+  }
+);
+
+
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -359,6 +391,29 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.errors = action.payload;
       });
+
+
+
+
+    // Delete Profile Image
+    builder
+      .addCase(deleteProfileImage.pending, (state) => {
+        state.isLoading = true;
+        state.errors = null;
+      })
+      .addCase(deleteProfileImage.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = {
+          ...state.user,
+          data: action.payload
+        };
+        state.errors = null;
+      })
+      .addCase(deleteProfileImage.rejected, (state, action) => {
+        state.isLoading = false;
+        state.errors = action.payload;
+      });
+
   }
 });
 

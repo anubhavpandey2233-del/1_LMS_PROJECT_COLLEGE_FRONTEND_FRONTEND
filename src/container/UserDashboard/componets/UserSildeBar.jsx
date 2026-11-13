@@ -57,10 +57,10 @@ function UserSildeBar() {
                   My Courses
                 </NavLink>
 
-                <NavLink to="/user-paymentinfo" className={getNavLinkClass}>
+                {/* <NavLink to="/user-paymentinfo" className={getNavLinkClass}>
                   <i className="bi bi-credit-card-2-front fa-fw me-2" />
                   Payment Info
-                </NavLink>
+                </NavLink> */}
 
                 <NavLink to="/user-wishlist" className={getNavLinkClass}>
                   <i className="bi bi-cart-check fa-fw me-2" />

@@ -35,6 +35,8 @@ import UserCourseList from "../container/UserDashboard/UserCourseList.jsx";
 import UserPaymentInfo from "../container/UserDashboard/UserPaymentInfo.jsx";
 import UserWiishlist from "../container/UserDashboard/UserWiishlist.jsx";
 import UserEditProfile from "../container/UserDashboard/UserEditProfile.jsx";
+import Instructor_Delete_Profile from "../container/InstructorDashboard/Instructor_Delete_Profile.jsx";
+import Instructor_Settings from "../container/InstructorDashboard/Instructor_Settings.jsx";
 
 function UserRouter() {
   const themedata = useContext(ThemeContext);
@@ -87,12 +89,20 @@ function UserRouter() {
         <Route path='/Instructor_Create_Course/:id' element={<Instructor_Create_Course />}></Route>
         <Route path='/Instructor_Earning' element={< Instructor_Earning />} ></Route>
         <Route path='/Instructor_Review' element={<Instructor_Review />}></Route>
-        <Route path='/Instructor_Manage_Course' element={<Instructor_Manage_Course   />}></Route>
+        <Route path='/Instructor_Manage_Course' element={<Instructor_Manage_Course />}></Route>
         <Route path='/Instructor_Order' element={<Instructor_Order />}></Route>
         <Route path='/Instructor_Payout' element={<Instructor_Payout />}></Route>
         <Route path='/Instructor_Single' element={<Instructor_Single />}></Route>
         <Route path='/Instructor_List' element={< Instructor_List />} ></Route>
         <Route path='/Instructor_Student_list' element={<Instructor_Student_list />}></Route>
+        <Route
+          path="/instructor-delete-profile"
+          element={<Instructor_Delete_Profile />}
+        />
+        <Route
+          path="/instructor-settings"
+          element={<Instructor_Settings />}
+        />
       </Routes>
       <Footer />
     </div>
