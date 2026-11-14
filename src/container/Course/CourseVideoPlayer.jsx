@@ -14,6 +14,8 @@ import {
 } from "../../redux/Api/progess.api";
 
 import { useGetenrollmentQuery } from "../../redux/Api/enrollment.api";
+import { useGetquizQuery } from "../../redux/Api/quiz.api";
+import { useGetquizContentQuery } from "../../redux/Api/quizContent.api";
 
 const getId = (value) => {
   if (!value) return "";
@@ -43,6 +45,9 @@ const formatTime = (seconds) => {
   return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
 };
 
+const normalizeAnswer = (value) =>
+  String(value ?? "").trim().toLowerCase();
+
 function CourseVideoPlayer() {
   const { _id } = useParams();
   const navigate = useNavigate();
@@ -71,6 +76,12 @@ function CourseVideoPlayer() {
   const { data: enrollmentResponse } = useGetenrollmentQuery();
   const { data: progressResponse } = useGetAllprogessQuery();
 
+  const { data: quizResponse, isLoading: quizLoading } =
+    useGetquizQuery();
+
+  const { data: quizContentResponse, isLoading: quizContentLoading } =
+    useGetquizContentQuery();
+
   const [addProgress] = useAddprogessMutation();
   const [updateProgress] = useUpdateprogessMutation();
 
@@ -81,11 +92,17 @@ function CourseVideoPlayer() {
 
   const [selectedContentId, setSelectedContentId] = useState("");
 
+  const [activeQuizId, setActiveQuizId] = useState("");
+  const [quizAnswers, setQuizAnswers] = useState({});
+  const [submittedQuizzes, setSubmittedQuizzes] = useState({});
+
   const courses = courseResponse?.data ?? [];
   const sections = sectionResponse?.data ?? [];
   const contents = contentResponse?.data ?? [];
   const enrollments = enrollmentResponse?.data ?? [];
   const progresses = progressResponse?.data ?? [];
+  const quizzes = quizResponse?.data ?? [];
+  const quizContents = quizContentResponse?.data ?? [];
 
   const routeContent = useMemo(
     () => contents.find((item) => getId(item._id) === String(_id)),
@@ -124,18 +141,34 @@ function CourseVideoPlayer() {
     [contents, courseId, courseSectionIds]
   );
 
+  const courseQuizzes = useMemo(
+    () =>
+      quizzes.filter(
+        (item) =>
+          getId(item.course_id) === courseId &&
+          courseSectionIds.includes(getId(item.section_id))
+      ),
+    [quizzes, courseId, courseSectionIds]
+  );
+
   useEffect(() => {
     if (!courseContents.length) return;
 
     const routeContentId = getId(routeContent?._id);
 
-    if (routeContentId && courseContents.some((item) => getId(item._id) === routeContentId)) {
+    if (
+      routeContentId &&
+      courseContents.some((item) => getId(item._id) === routeContentId)
+    ) {
       setSelectedContentId(routeContentId);
       return;
     }
 
     setSelectedContentId((previous) => {
-      if (previous && courseContents.some((item) => getId(item._id) === previous)) {
+      if (
+        previous &&
+        courseContents.some((item) => getId(item._id) === previous)
+      ) {
         return previous;
       }
 
@@ -308,6 +341,76 @@ function CourseVideoPlayer() {
   const handleLectureSelect = (lectureId) => {
     setSelectedContentId(lectureId);
     navigate(`/course-video-player/${lectureId}`, { replace: true });
+  };
+
+  const getQuizQuestions = (quizId) =>
+    quizContents.filter((item) => getId(item.quiz) === getId(quizId));
+
+  const handleQuizAnswer = (quizId, questionId, answer) => {
+    if (submittedQuizzes[quizId]) return;
+
+    setQuizAnswers((previous) => ({
+      ...previous,
+      [quizId]: {
+        ...(previous[quizId] || {}),
+        [questionId]: answer,
+      },
+    }));
+  };
+
+  const handleSubmitQuiz = (quizId, questions) => {
+    if (!questions.length) return;
+
+    const answers = quizAnswers[quizId] || {};
+
+    const allAnswered = questions.every((question) =>
+      Object.prototype.hasOwnProperty.call(
+        answers,
+        getId(question._id)
+      )
+    );
+
+    if (!allAnswered) {
+      alert("Please answer all questions before submitting.");
+      return;
+    }
+
+    setSubmittedQuizzes((previous) => ({
+      ...previous,
+      [quizId]: true,
+    }));
+  };
+
+  const handleRetakeQuiz = (quizId) => {
+    setQuizAnswers((previous) => ({
+      ...previous,
+      [quizId]: {},
+    }));
+
+    setSubmittedQuizzes((previous) => ({
+      ...previous,
+      [quizId]: false,
+    }));
+  };
+
+  const calculateQuizResult = (questions, answers) => {
+    let score = 0;
+    let totalMarks = 0;
+
+    questions.forEach((question) => {
+      const marks = Number(question.Mark) > 0 ? Number(question.Mark) : 1;
+
+      totalMarks += marks;
+
+      if (
+        normalizeAnswer(answers[getId(question._id)]) ===
+        normalizeAnswer(question.Answer)
+      ) {
+        score += marks;
+      }
+    });
+
+    return { score, totalMarks };
   };
 
   if (courseLoading || sectionLoading || contentLoading) {
@@ -493,13 +596,20 @@ function CourseVideoPlayer() {
               {courseSections.length > 0 ? (
                 <div className="accordion accordion-flush">
                   {courseSections.map((sectionItem, index) => {
+                    const currentSectionId = getId(sectionItem._id);
+
                     const sectionLectures = courseContents.filter(
                       (item) =>
-                        getId(item.section_id) === getId(sectionItem._id)
+                        getId(item.section_id) === currentSectionId
+                    );
+
+                    const sectionQuizzes = courseQuizzes.filter(
+                      (item) =>
+                        getId(item.section_id) === currentSectionId
                     );
 
                     const sectionIsCurrent =
-                      getId(sectionItem._id) === sectionId;
+                      currentSectionId === sectionId;
 
                     return (
                       <div className="accordion-item" key={sectionItem._id}>
@@ -517,8 +627,9 @@ function CourseVideoPlayer() {
                             <span className="fw-semibold">
                               {sectionItem.name || `Section ${index + 1}`}
                             </span>
+
                             <span className="ms-2 small text-muted">
-                              ({sectionLectures.length})
+                              ({sectionLectures.length} lectures)
                             </span>
                           </button>
                         </h2>
@@ -547,7 +658,9 @@ function CourseVideoPlayer() {
                                   <button
                                     type="button"
                                     key={lectureId}
-                                    onClick={() => handleLectureSelect(lectureId)}
+                                    onClick={() =>
+                                      handleLectureSelect(lectureId)
+                                    }
                                     className={`list-group-item list-group-item-action d-flex align-items-center gap-2 ${
                                       active ? "active" : ""
                                     }`}
@@ -582,6 +695,322 @@ function CourseVideoPlayer() {
                               </div>
                             )}
                           </div>
+
+                          {sectionQuizzes.length > 0 && (
+                            <div className="p-3 bg-light border-top">
+                              <h6 className="fw-bold mb-3">
+                                <i className="fas fa-clipboard-list me-2" />
+                                Section Quiz
+                              </h6>
+
+                              {sectionQuizzes.map((quizItem) => {
+                                const quizId = getId(quizItem._id);
+                                const questions = getQuizQuestions(quizId);
+
+                                const isOpen = activeQuizId === quizId;
+                                const isSubmitted =
+                                  submittedQuizzes[quizId] === true;
+
+                                const answers = quizAnswers[quizId] || {};
+
+                                const result = calculateQuizResult(
+                                  questions,
+                                  answers
+                                );
+
+                                const allAnswered =
+                                  questions.length > 0 &&
+                                  questions.every((question) =>
+                                    Object.prototype.hasOwnProperty.call(
+                                      answers,
+                                      getId(question._id)
+                                    )
+                                  );
+
+                                return (
+                                  <div
+                                    key={quizId}
+                                    className="card border mb-3"
+                                  >
+                                    <div className="card-body">
+                                      <div className="d-flex justify-content-between align-items-start gap-2">
+                                        <div>
+                                          <h6 className="fw-semibold mb-1">
+                                            {quizItem.name || "Untitled Quiz"}
+                                          </h6>
+
+                                          <p className="small text-muted mb-2">
+                                            {questions.length} Questions
+                                            {quizItem.mark
+                                              ? ` • ${quizItem.mark} Marks`
+                                              : ""}
+                                          </p>
+                                        </div>
+
+                                        <span className="badge bg-primary">
+                                          Quiz
+                                        </span>
+                                      </div>
+
+                                      {!isOpen ? (
+                                        <button
+                                          type="button"
+                                          className="btn btn-primary btn-sm w-100"
+                                          onClick={() =>
+                                            setActiveQuizId(quizId)
+                                          }
+                                        >
+                                          Start Quiz
+                                        </button>
+                                      ) : (
+                                        <>
+                                          {quizLoading ||
+                                          quizContentLoading ? (
+                                            <div className="text-center py-3">
+                                              <div
+                                                className="spinner-border spinner-border-sm"
+                                                role="status"
+                                              />
+                                              <p className="small mb-0 mt-2">
+                                                Loading quiz...
+                                              </p>
+                                            </div>
+                                          ) : questions.length === 0 ? (
+                                            <div className="alert alert-warning mb-0">
+                                              Is quiz mein abhi questions
+                                              available nahi hain.
+                                            </div>
+                                          ) : (
+                                            <>
+                                              <hr />
+
+                                              {questions.map(
+                                                (question, questionIndex) => {
+                                                  const questionId = getId(
+                                                    question._id
+                                                  );
+
+                                                  const options =
+                                                    Array.isArray(
+                                                      question.options
+                                                    )
+                                                      ? question.options
+                                                      : [];
+
+                                                  const selectedAnswer =
+                                                    answers[questionId];
+
+                                                  const isCorrect =
+                                                    normalizeAnswer(
+                                                      selectedAnswer
+                                                    ) ===
+                                                    normalizeAnswer(
+                                                      question.Answer
+                                                    );
+
+                                                  return (
+                                                    <div
+                                                      key={questionId}
+                                                      className="mb-4"
+                                                    >
+                                                      <div className="d-flex justify-content-between gap-2 mb-2">
+                                                        <p className="fw-semibold mb-0">
+                                                          Q{questionIndex + 1}.{" "}
+                                                          {question.question}
+                                                        </p>
+
+                                                        <span className="badge bg-secondary align-self-start">
+                                                          {Number(
+                                                            question.Mark
+                                                          ) > 0
+                                                            ? question.Mark
+                                                            : 1}{" "}
+                                                          Marks
+                                                        </span>
+                                                      </div>
+
+                                                      {options.map(
+                                                        (option, optionIndex) => {
+                                                          const isSelected =
+                                                            selectedAnswer ===
+                                                            option;
+
+                                                          const isCorrectOption =
+                                                            isSubmitted &&
+                                                            normalizeAnswer(
+                                                              option
+                                                            ) ===
+                                                              normalizeAnswer(
+                                                                question.Answer
+                                                              );
+
+                                                          let optionClass =
+                                                            "border rounded p-2 mb-2 d-flex align-items-center gap-2";
+
+                                                          if (isSubmitted) {
+                                                            if (
+                                                              isCorrectOption
+                                                            ) {
+                                                              optionClass +=
+                                                                " border-success bg-success-subtle";
+                                                            } else if (
+                                                              isSelected &&
+                                                              !isCorrect
+                                                            ) {
+                                                              optionClass +=
+                                                                " border-danger bg-danger-subtle";
+                                                            }
+                                                          } else if (
+                                                            isSelected
+                                                          ) {
+                                                            optionClass +=
+                                                              " border-primary bg-primary-subtle";
+                                                          }
+
+                                                          return (
+                                                            <label
+                                                              key={optionIndex}
+                                                              className={
+                                                                optionClass
+                                                              }
+                                                              style={{
+                                                                cursor:
+                                                                  isSubmitted
+                                                                    ? "default"
+                                                                    : "pointer",
+                                                              }}
+                                                            >
+                                                              <input
+                                                                type="radio"
+                                                                name={`quiz-${quizId}-${questionId}`}
+                                                                value={option}
+                                                                checked={
+                                                                  isSelected
+                                                                }
+                                                                disabled={
+                                                                  isSubmitted
+                                                                }
+                                                                onChange={() =>
+                                                                  handleQuizAnswer(
+                                                                    quizId,
+                                                                    questionId,
+                                                                    option
+                                                                  )
+                                                                }
+                                                              />
+
+                                                              <span>
+                                                                {option}
+                                                              </span>
+                                                            </label>
+                                                          );
+                                                        }
+                                                      )}
+
+                                                      {isSubmitted && (
+                                                        <div
+                                                          className={`small mt-2 ${
+                                                            isCorrect
+                                                              ? "text-success"
+                                                              : "text-danger"
+                                                          }`}
+                                                        >
+                                                          {isCorrect
+                                                            ? "Correct Answer!"
+                                                            : `Correct Answer: ${question.Answer}`}
+                                                        </div>
+                                                      )}
+                                                    </div>
+                                                  );
+                                                }
+                                              )}
+
+                                              {isSubmitted ? (
+                                                <div className="mt-3">
+                                                  <div className="alert alert-info text-center">
+                                                    <h5 className="mb-1">
+                                                      Quiz Result
+                                                    </h5>
+
+                                                    <h3 className="mb-1">
+                                                      {result.score} /{" "}
+                                                      {result.totalMarks}
+                                                    </h3>
+
+                                                    <p className="mb-0">
+                                                      {result.totalMarks > 0
+                                                        ? `${Math.round(
+                                                            (result.score /
+                                                              result.totalMarks) *
+                                                              100
+                                                          )}% Score`
+                                                        : "No marks available"}
+                                                    </p>
+                                                  </div>
+
+                                                  <button
+                                                    type="button"
+                                                    className="btn btn-success btn-sm w-100 mb-2"
+                                                    onClick={() =>
+                                                      handleRetakeQuiz(quizId)
+                                                    }
+                                                  >
+                                                    Retake Quiz
+                                                  </button>
+
+                                                  <button
+                                                    type="button"
+                                                    className="btn btn-outline-secondary btn-sm w-100"
+                                                    onClick={() =>
+                                                      setActiveQuizId("")
+                                                    }
+                                                  >
+                                                    Close Quiz
+                                                  </button>
+                                                </div>
+                                              ) : (
+                                                <div className="d-grid gap-2">
+                                                  <button
+                                                    type="button"
+                                                    className="btn btn-success"
+                                                    disabled={!allAnswered}
+                                                    onClick={() =>
+                                                      handleSubmitQuiz(
+                                                        quizId,
+                                                        questions
+                                                      )
+                                                    }
+                                                  >
+                                                    Submit Quiz
+                                                  </button>
+
+                                                  <button
+                                                    type="button"
+                                                    className="btn btn-outline-secondary btn-sm"
+                                                    onClick={() =>
+                                                      setActiveQuizId("")
+                                                    }
+                                                  >
+                                                    Close Quiz
+                                                  </button>
+
+                                                  <p className="small text-muted text-center mb-0">
+                                                    {Object.keys(answers).length}{" "}
+                                                    of {questions.length}{" "}
+                                                    questions answered
+                                                  </p>
+                                                </div>
+                                              )}
+                                            </>
+                                          )}
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -603,7 +1032,7 @@ function CourseVideoPlayer() {
                 Back to Course
               </button>
             </div>
-          </div>
+          </div>  
         </div>
       </div>
     </main>
@@ -611,6 +1040,7 @@ function CourseVideoPlayer() {
 }
 
 export default CourseVideoPlayer;
+
 
 
 
