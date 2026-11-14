@@ -45,13 +45,8 @@ function Course() {
   const navigate = useNavigate();
 
 const handleClickOpen = () => {
-  const role = userData?.user?.data?.logtype;
-
-  if (role === "admin") {
-    navigate("/admin/course");
-  } else {
-    navigate("/Instructor_Create_Course");
-  }
+  setUpadateData(null);
+  setOpen(true);
 };
 
   const handleClose = () => {
