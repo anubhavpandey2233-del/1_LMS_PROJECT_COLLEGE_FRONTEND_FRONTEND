@@ -239,16 +239,16 @@ function Instructor_Student_list() {
                                   <td>
                                     <div className="d-flex align-items-center position-relative">
                                       <div className="avatar avatar-md mb-2 mb-md-0">
-                                        <img
-                                          src={
-                                            student.pfp ||
-                                            student.profile_image ||
-                                            student.avatar ||
-                                            "assets/images/avatar/01.jpg"
-                                          }
-                                          className="rounded"
-                                          alt={student.name || "Student"}
-                                        />
+                                       <img
+  src={
+    student.pfp?.[0]?.url ||
+    student.profile_image ||
+    student.avatar ||
+    "assets/images/avatar/01.jpg"
+  }
+  className="rounded"
+  alt={student.name || "Student"}
+/>
                                       </div>
 
                                       <div className="mb-0 ms-2">

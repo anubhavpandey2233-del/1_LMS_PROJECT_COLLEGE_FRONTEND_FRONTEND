@@ -1,6 +1,6 @@
-
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import InstructorHeader from './components/InstructorHeader';
 import InstructorSidebar from './components/InstructorSidebar';
 import { useDeletCourseMutation } from '../../redux/Api/Course.api';
@@ -9,8 +9,14 @@ function InstructorDashboard() {
   const navigate = useNavigate();
   const [deleteCourse] = useDeletCourseMutation();
 
+  const auth = useSelector((state) => state.auth);
+  const user = auth?.user?.data || {};
+
+  const isAdmin = user?.role === 'admin' || user?.role === 'Admin';
+
   const [dashboardStats, setDashboardStats] = useState({
     totalCourses: 0,
+    totalTeachers: 0,
     totalStudents: 0,
     enrolledStudents: 0,
     totalEnrollments: 0,
@@ -35,17 +41,19 @@ function InstructorDashboard() {
         setStatsLoading(true);
         setStatsError('');
 
-        const response = await fetch(
-          'http://localhost:5000/api/v2/dashboard/instructor-stats',
-          {
-            method: 'GET',
-            credentials: 'include',
-            signal: controller.signal,
-          }
-        );
+        const dashboardUrl = isAdmin
+          ? 'http://localhost:5000/api/v2/dashboard/stats'
+          : 'http://localhost:5000/api/v2/dashboard/instructor-stats';
+
+        const response = await fetch(dashboardUrl, {
+          method: 'GET',
+          credentials: 'include',
+          signal: controller.signal,
+        });
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
+
           throw new Error(
             errorData.message || `Request failed: ${response.status}`
           );
@@ -54,25 +62,45 @@ function InstructorDashboard() {
         const result = await response.json();
         const data = result?.data ?? result;
 
-        setDashboardStats({
-          totalCourses: Number(data?.totalCourses ?? 0),
-          totalStudents: Number(data?.totalStudents ?? 0),
-          enrolledStudents: Number(data?.enrolledStudents ?? 0),
-          totalEnrollments: Number(data?.totalEnrollments ?? 0),
-          averageRating: data?.averageRating ?? null,
-          totalReviews: Number(data?.totalReviews ?? 0),
-          currentMonthEarning: Number(data?.currentMonthEarning ?? 0),
-          lastMonthEarning: Number(data?.lastMonthEarning ?? 0),
-          earningPercentage: data?.earningPercentage ?? null,
-          mostSellingCourses: Array.isArray(data?.mostSellingCourses)
-            ? data.mostSellingCourses
-            : [],
-        });
+        if (isAdmin) {
+          setDashboardStats({
+            totalCourses: Number(data?.totalCourses ?? 0),
+            totalTeachers: Number(data?.totalTeachers ?? 0),
+            totalStudents: Number(data?.totalStudents ?? 0),
+            enrolledStudents: Number(data?.totalEnrollments ?? 0),
+            totalEnrollments: Number(data?.totalEnrollments ?? 0),
+            averageRating: null,
+            totalReviews: 0,
+            currentMonthEarning: Number(data?.totalRevenue ?? 0),
+            lastMonthEarning: 0,
+            earningPercentage: null,
+            mostSellingCourses: Array.isArray(data?.popularCourses)
+              ? data.popularCourses
+              : [],
+          });
+        } else {
+          setDashboardStats({
+            totalCourses: Number(data?.totalCourses ?? 0),
+            totalStudents: Number(data?.totalStudents ?? 0),
+            enrolledStudents: Number(data?.enrolledStudents ?? 0),
+            totalEnrollments: Number(data?.totalEnrollments ?? 0),
+            averageRating: data?.averageRating ?? null,
+            totalReviews: Number(data?.totalReviews ?? 0),
+            currentMonthEarning: Number(data?.currentMonthEarning ?? 0),
+            lastMonthEarning: Number(data?.lastMonthEarning ?? 0),
+            earningPercentage: data?.earningPercentage ?? null,
+            mostSellingCourses: Array.isArray(data?.mostSellingCourses)
+              ? data.mostSellingCourses
+              : [],
+          });
+        }
       } catch (error) {
         if (error.name !== 'AbortError') {
-          console.error('Instructor dashboard stats error:', error);
+          console.error('Dashboard stats error:', error);
+
           setStatsError(
-            error.message || 'Dashboard data load nahi hua. Backend check karo.'
+            error.message ||
+            'Dashboard data load nahi hua. Backend check karo.'
           );
         }
       } finally {
@@ -82,17 +110,26 @@ function InstructorDashboard() {
       }
     }
 
-    fetchDashboardStats();
+    if (user?._id) {
+      fetchDashboardStats();
+    }
 
     return () => controller.abort();
-  }, []);
+  }, [isAdmin, user?._id]);
 
   const courses = dashboardStats.mostSellingCourses;
 
   const totalEntries = courses.length;
-  const totalPages = Math.max(1, Math.ceil(totalEntries / entriesPerPage));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(totalEntries / entriesPerPage)
+  );
+
   const startIndex = (currentPage - 1) * entriesPerPage;
-  const endIndex = Math.min(startIndex + entriesPerPage, totalEntries);
+  const endIndex = Math.min(
+    startIndex + entriesPerPage,
+    totalEntries
+  );
 
   const currentCourses = useMemo(
     () => courses.slice(startIndex, startIndex + entriesPerPage),
@@ -108,6 +145,7 @@ function InstructorDashboard() {
   const showCount = (value) => {
     if (statsLoading) return '...';
     if (statsError) return '--';
+
     return Number(value || 0).toLocaleString('en-IN');
   };
 
@@ -116,8 +154,14 @@ function InstructorDashboard() {
   };
 
   const getCourseImage = (course) => {
-    if (Array.isArray(course?.course_img) && course.course_img.length > 0) {
-      return course.course_img[0]?.url || 'assets/images/courses/4by3/08.jpg';
+    if (
+      Array.isArray(course?.course_img) &&
+      course.course_img.length > 0
+    ) {
+      return (
+        course.course_img[0]?.url ||
+        'assets/images/courses/4by3/08.jpg'
+      );
     }
 
     if (typeof course?.course_img === 'string' && course.course_img) {
@@ -129,6 +173,7 @@ function InstructorDashboard() {
 
   const handleEdit = (courseId) => {
     if (!courseId) return;
+
     navigate(`/Instructor_Create_Course/${courseId}`);
   };
 
@@ -146,12 +191,16 @@ function InstructorDashboard() {
       window.location.reload();
     } catch (error) {
       console.error('Delete course error:', error);
-      alert(error?.data?.message || 'Course delete nahi hua.');
+
+      alert(
+        error?.data?.message || 'Course delete nahi hua.'
+      );
     }
   };
 
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages) return;
+
     setCurrentPage(page);
   };
 
@@ -160,8 +209,12 @@ function InstructorDashboard() {
     (_, index) => index + 1
   );
 
-  const earningPercentage = Number(dashboardStats.earningPercentage || 0);
-  const hasEarningComparison = dashboardStats.earningPercentage !== null &&
+  const earningPercentage = Number(
+    dashboardStats.earningPercentage || 0
+  );
+
+  const hasEarningComparison =
+    dashboardStats.earningPercentage !== null &&
     dashboardStats.earningPercentage !== undefined;
 
   return (
@@ -184,10 +237,12 @@ function InstructorDashboard() {
                     <span className="display-6 text-warning mb-0">
                       <i className="fas fa-tv fa-fw" />
                     </span>
+
                     <div className="ms-4">
                       <h5 className="mb-0 fw-bold">
                         {showCount(dashboardStats.totalCourses)}
                       </h5>
+
                       <span className="mb-0 h6 fw-light">
                         Total Courses
                       </span>
@@ -200,10 +255,12 @@ function InstructorDashboard() {
                     <span className="display-6 text-purple mb-0">
                       <i className="fas fa-user-graduate fa-fw" />
                     </span>
+
                     <div className="ms-4">
                       <h5 className="mb-0 fw-bold">
                         {showCount(dashboardStats.totalStudents)}
                       </h5>
+
                       <span className="mb-0 h6 fw-light">
                         Total Students
                       </span>
@@ -216,10 +273,14 @@ function InstructorDashboard() {
                     <span className="display-6 text-info mb-0">
                       <i className="fas fa-gem fa-fw" />
                     </span>
+
                     <div className="ms-4">
                       <h5 className="mb-0 fw-bold">
-                        {showCount(dashboardStats.enrolledStudents)}
+                        {showCount(
+                          dashboardStats.enrolledStudents
+                        )}
                       </h5>
+
                       <span className="mb-0 h6 fw-light">
                         Enrolled Students
                       </span>
@@ -229,8 +290,12 @@ function InstructorDashboard() {
               </div>
 
               {statsError && (
-                <div className="alert alert-warning mt-3" role="alert">
+                <div
+                  className="alert alert-warning mt-3"
+                  role="alert"
+                >
                   {statsError}
+
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-warning ms-3"
@@ -248,63 +313,111 @@ function InstructorDashboard() {
                     <div className="row g-4">
                       <div className="col-sm-6 col-md-4">
                         <span className="badge bg-dark text-white">
-                          Current Month
+                          {isAdmin
+                            ? 'Total Revenue'
+                            : 'Current Month'}
                         </span>
+
                         <h4 className="text-primary my-2">
                           {statsLoading
                             ? '...'
-                            : formatCurrency(dashboardStats.currentMonthEarning)}
+                            : formatCurrency(
+                              dashboardStats.currentMonthEarning
+                            )}
                         </h4>
+
+                        {!isAdmin && (
+                          <p className="mb-0">
+                            {hasEarningComparison ? (
+                              <span
+                                className={`me-1 ${earningPercentage >= 0
+                                    ? 'text-success'
+                                    : 'text-danger'
+                                  }`}
+                              >
+                                {Math.abs(
+                                  earningPercentage
+                                ).toFixed(2)}
+                                %
+                                <i
+                                  className={`bi ${earningPercentage >= 0
+                                      ? 'bi-arrow-up'
+                                      : 'bi-arrow-down'
+                                    } ms-1`}
+                                />
+                              </span>
+                            ) : (
+                              <span className="text-muted me-1">
+                                --
+                              </span>
+                            )}
+
+                            vs last month
+                          </p>
+                        )}
+
+                        {isAdmin && (
+                          <p className="mb-0">
+                            Total successful platform revenue
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="col-sm-6 col-md-4">
+                        <span className="badge bg-dark text-white">
+                          {isAdmin
+                            ? 'Active Courses'
+                            : 'Last Month'}
+                        </span>
+
+                        <h4 className="my-2">
+                          {statsLoading
+                            ? '...'
+                            : isAdmin
+                              ? showCount(
+                                dashboardStats.totalCourses
+                              )
+                              : formatCurrency(
+                                dashboardStats.lastMonthEarning
+                              )}
+                        </h4>
+
                         <p className="mb-0">
-                          {hasEarningComparison ? (
-                            <span
-                              className={`me-1 ${
-                                earningPercentage >= 0
-                                  ? 'text-success'
-                                  : 'text-danger'
-                              }`}
-                            >
-                              {Math.abs(earningPercentage).toFixed(2)}%
-                              <i
-                                className={`bi ${
-                                  earningPercentage >= 0
-                                    ? 'bi-arrow-up'
-                                    : 'bi-arrow-down'
-                                } ms-1`}
-                              />
-                            </span>
-                          ) : (
-                            <span className="text-muted me-1">--</span>
-                          )}
-                          vs last month
+                          {isAdmin
+                            ? 'Courses available on platform'
+                            : 'Previous month earnings'}
                         </p>
                       </div>
 
                       <div className="col-sm-6 col-md-4">
                         <span className="badge bg-dark text-white">
-                          Last Month
+                          {isAdmin
+                            ? 'Total Teachers'
+                            : 'Instructor Rating'}
                         </span>
-                        <h4 className="my-2">
-                          {statsLoading
-                            ? '...'
-                            : formatCurrency(dashboardStats.lastMonthEarning)}
-                        </h4>
-                        <p className="mb-0">Previous month earnings</p>
-                      </div>
 
-                      <div className="col-sm-6 col-md-4">
-                        <span className="badge bg-dark text-white">
-                          Instructor Rating
-                        </span>
                         <h4 className="text-primary my-2">
                           {statsLoading
                             ? '...'
-                            : dashboardStats.averageRating != null
-                              ? `${Number(dashboardStats.averageRating).toFixed(1)}/5.0`
-                              : 'No ratings'}
+                            : isAdmin
+                              ? showCount(
+                                dataSafeTeacherCount(
+                                  dashboardStats
+                                )
+                              )
+                              : dashboardStats.averageRating != null
+                                ? `${Number(
+                                  dashboardStats.averageRating
+                                ).toFixed(1)}/5.0`
+                                : 'No ratings'}
                         </h4>
+
                         <p className="mb-0">
-                          {showCount(dashboardStats.totalReviews)} Reviews
+                          {isAdmin
+                            ? 'Active teachers'
+                            : `${showCount(
+                              dashboardStats.totalReviews
+                            )} Reviews`}
                         </p>
                       </div>
 
@@ -312,10 +425,18 @@ function InstructorDashboard() {
                         <span className="badge bg-dark text-white">
                           Total Enrollments
                         </span>
+
                         <h4 className="my-2">
-                          {showCount(dashboardStats.totalEnrollments)}
+                          {showCount(
+                            dashboardStats.totalEnrollments
+                          )}
                         </h4>
-                        <p className="mb-0">Across your courses</p>
+
+                        <p className="mb-0">
+                          {isAdmin
+                            ? 'Successful enrollments'
+                            : 'Across your courses'}
+                        </p>
                       </div>
                     </div>
 
@@ -331,13 +452,17 @@ function InstructorDashboard() {
                     <div className="card-header border-bottom">
                       <div className="d-sm-flex justify-content-sm-between align-items-center">
                         <h3 className="mb-2 mb-sm-0">
-                          Most Selling Courses
+                          {isAdmin
+                            ? 'Popular Courses'
+                            : 'Most Selling Courses'}
                         </h3>
 
                         <button
                           type="button"
                           className="btn btn-sm btn-primary-soft mb-0"
-                          onClick={() => navigate('/Instructor_Create_Course')}
+                          onClick={() =>
+                            navigate('/Instructor_Create_Course')
+                          }
                         >
                           View all
                         </button>
@@ -352,98 +477,157 @@ function InstructorDashboard() {
                               <th className="border-0 rounded-start">
                                 Course Name
                               </th>
-                              <th className="border-0">Selling</th>
-                              <th className="border-0">Amount</th>
-                              <th className="border-0">Period</th>
-                              <th className="border-0 rounded-end">Action</th>
+
+                              <th className="border-0">
+                                Selling
+                              </th>
+
+                              <th className="border-0">
+                                Amount
+                              </th>
+
+                              <th className="border-0">
+                                Period
+                              </th>
+
+                              <th className="border-0 rounded-end">
+                                Action
+                              </th>
                             </tr>
                           </thead>
 
                           <tbody>
                             {statsLoading ? (
                               <tr>
-                                <td colSpan="5" className="text-center py-4">
+                                <td
+                                  colSpan="5"
+                                  className="text-center py-4"
+                                >
                                   Loading courses...
                                 </td>
                               </tr>
                             ) : statsError ? (
                               <tr>
-                                <td colSpan="5" className="text-center py-4">
+                                <td
+                                  colSpan="5"
+                                  className="text-center py-4"
+                                >
                                   Course data load nahi hua.
                                 </td>
                               </tr>
                             ) : currentCourses.length > 0 ? (
-                              currentCourses.map((course, index) => {
-                                const courseId = course._id || course.id;
-                                const courseName = course.name || 'Untitled Course';
-                                const selling = Number(course.totalSelling ?? course.totalEnrollments ?? 0);
-                                const amount = Number(
-                                  course.totalAmount ?? course.fees ?? 0
-                                );
+                              currentCourses.map(
+                                (course, index) => {
+                                  const courseId =
+                                    course._id || course.id;
 
-                                return (
-                                  <tr key={courseId || index}>
-                                    <td>
-                                      <div className="d-flex align-items-center">
-                                        <div className="w-100px w-md-60px">
-                                          <img
-                                            src={getCourseImage(course)}
-                                            className="rounded"
-                                            alt={courseName}
-                                            style={{
-                                              width: '70px',
-                                              height: '50px',
-                                              objectFit: 'cover',
-                                            }}
-                                            onError={(event) => {
-                                              event.currentTarget.src =
-                                                'assets/images/courses/4by3/08.jpg';
-                                            }}
-                                          />
+                                  const courseName =
+                                    course.name ||
+                                    'Untitled Course';
+
+                                  const selling = Number(
+                                    course.totalSelling ??
+                                    course.totalEnrollments ??
+                                    course.enrollments ??
+                                    0
+                                  );
+
+                                  const amount = Number(
+                                    course.totalAmount ??
+                                    course.fees ??
+                                    course.totalRevenue ??
+                                    0
+                                  );
+
+                                  return (
+                                    <tr
+                                      key={
+                                        courseId || index
+                                      }
+                                    >
+                                      <td>
+                                        <div className="d-flex align-items-center">
+                                          <div className="w-100px w-md-60px">
+                                            <img
+                                              src={getCourseImage(
+                                                course
+                                              )}
+                                              className="rounded"
+                                              alt={courseName}
+                                              style={{
+                                                width: '70px',
+                                                height: '50px',
+                                                objectFit:
+                                                  'cover',
+                                              }}
+                                              onError={(
+                                                event
+                                              ) => {
+                                                event.currentTarget.src =
+                                                  'assets/images/courses/4by3/08.jpg';
+                                              }}
+                                            />
+                                          </div>
+
+                                          <h6 className="mb-0 ms-2">
+                                            {courseName}
+                                          </h6>
                                         </div>
-                                        <h6 className="mb-0 ms-2">
-                                          {courseName}
-                                        </h6>
-                                      </div>
-                                    </td>
+                                      </td>
 
-                                    <td>{selling}</td>
+                                      <td>{selling}</td>
 
-                                    <td>{formatCurrency(amount)}</td>
+                                      <td>
+                                        {formatCurrency(
+                                          amount
+                                        )}
+                                      </td>
 
-                                    <td>
-                                      <span className="badge bg-primary bg-opacity-10 text-primary">
-                                        {course.duration || 'N/A'}
-                                      </span>
-                                    </td>
+                                      <td>
+                                        <span className="badge bg-primary bg-opacity-10 text-primary">
+                                          {course.duration ||
+                                            'N/A'}
+                                        </span>
+                                      </td>
 
-                                    <td>
-                                      <button
-                                        type="button"
-                                        className="btn btn-sm btn-success-soft btn-round me-1 mb-0"
-                                        title="Edit Course"
-                                        onClick={() => handleEdit(courseId)}
-                                      >
-                                        <i className="far fa-fw fa-edit" />
-                                      </button>
+                                      <td>
+                                        <button
+                                          type="button"
+                                          className="btn btn-sm btn-success-soft btn-round me-1 mb-0"
+                                          title="Edit Course"
+                                          onClick={() =>
+                                            handleEdit(
+                                              courseId
+                                            )
+                                          }
+                                        >
+                                          <i className="far fa-fw fa-edit" />
+                                        </button>
 
-                                      <button
-                                        type="button"
-                                        className="btn btn-sm btn-danger-soft btn-round mb-0"
-                                        title="Delete Course"
-                                        onClick={() =>
-                                          handleDelete(courseId, courseName)
-                                        }
-                                      >
-                                        <i className="fas fa-fw fa-times" />
-                                      </button>
-                                    </td>
-                                  </tr>
-                                );
-                              })
+                                        <button
+                                          type="button"
+                                          className="btn btn-sm btn-danger-soft btn-round mb-0"
+                                          title="Delete Course"
+                                          onClick={() =>
+                                            handleDelete(
+                                              courseId,
+                                              courseName
+                                            )
+                                          }
+                                        >
+                                          <i className="fas fa-fw fa-times" />
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  );
+                                }
+                              )
                             ) : (
                               <tr>
-                                <td colSpan="5" className="text-center py-4">
+                                <td
+                                  colSpan="5"
+                                  className="text-center py-4"
+                                >
                                   No enrolled courses yet.
                                 </td>
                               </tr>
@@ -455,8 +639,12 @@ function InstructorDashboard() {
                       {/* Entries and Pagination */}
                       <div className="d-sm-flex justify-content-sm-between align-items-sm-center mt-3">
                         <p className="mb-0 text-center text-sm-start">
-                          Showing {totalEntries === 0 ? 0 : startIndex + 1} to{' '}
-                          {endIndex} of {totalEntries} entries
+                          Showing{' '}
+                          {totalEntries === 0
+                            ? 0
+                            : startIndex + 1}{' '}
+                          to {endIndex} of {totalEntries}{' '}
+                          entries
                         </p>
 
                         <nav
@@ -465,16 +653,21 @@ function InstructorDashboard() {
                         >
                           <ul className="pagination pagination-sm pagination-primary-soft mb-0 pb-0">
                             <li
-                              className={`page-item mb-0 ${
-                                currentPage === 1 ? 'disabled' : ''
-                              }`}
+                              className={`page-item mb-0 ${currentPage === 1
+                                  ? 'disabled'
+                                  : ''
+                                }`}
                             >
                               <button
                                 type="button"
                                 className="page-link"
-                                disabled={currentPage === 1}
+                                disabled={
+                                  currentPage === 1
+                                }
                                 onClick={() =>
-                                  handlePageChange(currentPage - 1)
+                                  handlePageChange(
+                                    currentPage - 1
+                                  )
                                 }
                               >
                                 <i className="fas fa-angle-left" />
@@ -484,14 +677,17 @@ function InstructorDashboard() {
                             {pageNumbers.map((page) => (
                               <li
                                 key={page}
-                                className={`page-item mb-0 ${
-                                  currentPage === page ? 'active' : ''
-                                }`}
+                                className={`page-item mb-0 ${currentPage === page
+                                    ? 'active'
+                                    : ''
+                                  }`}
                               >
                                 <button
                                   type="button"
                                   className="page-link"
-                                  onClick={() => handlePageChange(page)}
+                                  onClick={() =>
+                                    handlePageChange(page)
+                                  }
                                 >
                                   {page}
                                 </button>
@@ -499,16 +695,21 @@ function InstructorDashboard() {
                             ))}
 
                             <li
-                              className={`page-item mb-0 ${
-                                currentPage === totalPages ? 'disabled' : ''
-                              }`}
+                              className={`page-item mb-0 ${currentPage === totalPages
+                                  ? 'disabled'
+                                  : ''
+                                }`}
                             >
                               <button
                                 type="button"
                                 className="page-link"
-                                disabled={currentPage === totalPages}
+                                disabled={
+                                  currentPage === totalPages
+                                }
                                 onClick={() =>
-                                  handlePageChange(currentPage + 1)
+                                  handlePageChange(
+                                    currentPage + 1
+                                  )
                                 }
                               >
                                 <i className="fas fa-angle-right" />
@@ -521,6 +722,7 @@ function InstructorDashboard() {
                   </div>
                 </div>
               </div>
+
               {/* Most Selling Courses END */}
             </div>
           </div>
@@ -530,7 +732,550 @@ function InstructorDashboard() {
   );
 }
 
+function dataSafeTeacherCount(stats) {
+  return Number(stats?.totalTeachers ?? 0);
+}
+
 export default InstructorDashboard;
+
+
+
+
+
+
+
+// import React, { useEffect, useMemo, useState } from 'react';
+// import { useNavigate } from 'react-router-dom';
+// import InstructorHeader from './components/InstructorHeader';
+// import InstructorSidebar from './components/InstructorSidebar';
+// import { useDeletCourseMutation } from '../../redux/Api/Course.api';
+
+// function InstructorDashboard() {
+//   const navigate = useNavigate();
+//   const [deleteCourse] = useDeletCourseMutation();
+
+//   const [dashboardStats, setDashboardStats] = useState({
+//     totalCourses: 0,
+//     totalStudents: 0,
+//     enrolledStudents: 0,
+//     totalEnrollments: 0,
+//     averageRating: null,
+//     totalReviews: 0,
+//     currentMonthEarning: 0,
+//     lastMonthEarning: 0,
+//     earningPercentage: null,
+//     mostSellingCourses: [],
+//   });
+
+//   const [statsLoading, setStatsLoading] = useState(true);
+//   const [statsError, setStatsError] = useState('');
+//   const [currentPage, setCurrentPage] = useState(1);
+//   const entriesPerPage = 8;
+
+//   useEffect(() => {
+//     const controller = new AbortController();
+
+//     async function fetchDashboardStats() {
+//       try {
+//         setStatsLoading(true);
+//         setStatsError('');
+
+//         const response = await fetch(
+//           'http://localhost:5000/api/v2/dashboard/instructor-stats',
+//           {
+//             method: 'GET',
+//             credentials: 'include',
+//             signal: controller.signal,
+//           }
+//         );
+
+//         if (!response.ok) {
+//           const errorData = await response.json().catch(() => ({}));
+//           throw new Error(
+//             errorData.message || `Request failed: ${response.status}`
+//           );
+//         }
+
+//         const result = await response.json();
+//         const data = result?.data ?? result;
+
+//         setDashboardStats({
+//           totalCourses: Number(data?.totalCourses ?? 0),
+//           totalStudents: Number(data?.totalStudents ?? 0),
+//           enrolledStudents: Number(data?.enrolledStudents ?? 0),
+//           totalEnrollments: Number(data?.totalEnrollments ?? 0),
+//           averageRating: data?.averageRating ?? null,
+//           totalReviews: Number(data?.totalReviews ?? 0),
+//           currentMonthEarning: Number(data?.currentMonthEarning ?? 0),
+//           lastMonthEarning: Number(data?.lastMonthEarning ?? 0),
+//           earningPercentage: data?.earningPercentage ?? null,
+//           mostSellingCourses: Array.isArray(data?.mostSellingCourses)
+//             ? data.mostSellingCourses
+//             : [],
+//         });
+//       } catch (error) {
+//         if (error.name !== 'AbortError') {
+//           console.error('Instructor dashboard stats error:', error);
+//           setStatsError(
+//             error.message || 'Dashboard data load nahi hua. Backend check karo.'
+//           );
+//         }
+//       } finally {
+//         if (!controller.signal.aborted) {
+//           setStatsLoading(false);
+//         }
+//       }
+//     }
+
+//     fetchDashboardStats();
+
+//     return () => controller.abort();
+//   }, []);
+
+//   const courses = dashboardStats.mostSellingCourses;
+
+//   const totalEntries = courses.length;
+//   const totalPages = Math.max(1, Math.ceil(totalEntries / entriesPerPage));
+//   const startIndex = (currentPage - 1) * entriesPerPage;
+//   const endIndex = Math.min(startIndex + entriesPerPage, totalEntries);
+
+//   const currentCourses = useMemo(
+//     () => courses.slice(startIndex, startIndex + entriesPerPage),
+//     [courses, startIndex]
+//   );
+
+//   useEffect(() => {
+//     if (currentPage > totalPages) {
+//       setCurrentPage(totalPages);
+//     }
+//   }, [currentPage, totalPages]);
+
+//   const showCount = (value) => {
+//     if (statsLoading) return '...';
+//     if (statsError) return '--';
+//     return Number(value || 0).toLocaleString('en-IN');
+//   };
+
+//   const formatCurrency = (value) => {
+//     return `₹${Number(value || 0).toLocaleString('en-IN')}`;
+//   };
+
+//   const getCourseImage = (course) => {
+//     if (Array.isArray(course?.course_img) && course.course_img.length > 0) {
+//       return course.course_img[0]?.url || 'assets/images/courses/4by3/08.jpg';
+//     }
+
+//     if (typeof course?.course_img === 'string' && course.course_img) {
+//       return course.course_img;
+//     }
+
+//     return 'assets/images/courses/4by3/08.jpg';
+//   };
+
+//   const handleEdit = (courseId) => {
+//     if (!courseId) return;
+//     navigate(`/Instructor_Create_Course/${courseId}`);
+//   };
+
+//   const handleDelete = async (courseId, courseName) => {
+//     if (!courseId) return;
+
+//     const confirmed = window.confirm(
+//       `Are you sure you want to delete "${courseName}"?`
+//     );
+
+//     if (!confirmed) return;
+
+//     try {
+//       await deleteCourse(courseId).unwrap();
+//       window.location.reload();
+//     } catch (error) {
+//       console.error('Delete course error:', error);
+//       alert(error?.data?.message || 'Course delete nahi hua.');
+//     }
+//   };
+
+//   const handlePageChange = (page) => {
+//     if (page < 1 || page > totalPages) return;
+//     setCurrentPage(page);
+//   };
+
+//   const pageNumbers = Array.from(
+//     { length: totalPages },
+//     (_, index) => index + 1
+//   );
+
+//   const earningPercentage = Number(dashboardStats.earningPercentage || 0);
+//   const hasEarningComparison = dashboardStats.earningPercentage !== null &&
+//     dashboardStats.earningPercentage !== undefined;
+
+//   return (
+//     <main>
+//       <InstructorHeader
+//         dashboardStats={dashboardStats}
+//         statsLoading={statsLoading}
+//       />
+
+//       <section className="pt-0">
+//         <div className="container">
+//           <div className="row">
+//             <InstructorSidebar />
+
+//             <div className="col-xl-9">
+//               {/* Dashboard counters */}
+//               <div className="row g-4">
+//                 <div className="col-sm-6 col-lg-4">
+//                   <div className="d-flex justify-content-center align-items-center p-4 bg-warning bg-opacity-15 rounded-3">
+//                     <span className="display-6 text-warning mb-0">
+//                       <i className="fas fa-tv fa-fw" />
+//                     </span>
+//                     <div className="ms-4">
+//                       <h5 className="mb-0 fw-bold">
+//                         {showCount(dashboardStats.totalCourses)}
+//                       </h5>
+//                       <span className="mb-0 h6 fw-light">
+//                         Total Courses
+//                       </span>
+//                     </div>
+//                   </div>
+//                 </div>
+
+//                 <div className="col-sm-6 col-lg-4">
+//                   <div className="d-flex justify-content-center align-items-center p-4 bg-purple bg-opacity-10 rounded-3">
+//                     <span className="display-6 text-purple mb-0">
+//                       <i className="fas fa-user-graduate fa-fw" />
+//                     </span>
+//                     <div className="ms-4">
+//                       <h5 className="mb-0 fw-bold">
+//                         {showCount(dashboardStats.totalStudents)}
+//                       </h5>
+//                       <span className="mb-0 h6 fw-light">
+//                         Total Students
+//                       </span>
+//                     </div>
+//                   </div>
+//                 </div>
+
+//                 <div className="col-sm-6 col-lg-4">
+//                   <div className="d-flex justify-content-center align-items-center p-4 bg-info bg-opacity-10 rounded-3">
+//                     <span className="display-6 text-info mb-0">
+//                       <i className="fas fa-gem fa-fw" />
+//                     </span>
+//                     <div className="ms-4">
+//                       <h5 className="mb-0 fw-bold">
+//                         {showCount(dashboardStats.enrolledStudents)}
+//                       </h5>
+//                       <span className="mb-0 h6 fw-light">
+//                         Enrolled Students
+//                       </span>
+//                     </div>
+//                   </div>
+//                 </div>
+//               </div>
+
+//               {statsError && (
+//                 <div className="alert alert-warning mt-3" role="alert">
+//                   {statsError}
+//                   <button
+//                     type="button"
+//                     className="btn btn-sm btn-outline-warning ms-3"
+//                     onClick={() => window.location.reload()}
+//                   >
+//                     Retry
+//                   </button>
+//                 </div>
+//               )}
+
+//               {/* Earnings and Rating */}
+//               <div className="row mt-5">
+//                 <div className="col-12">
+//                   <div className="card card-body border p-4 h-100">
+//                     <div className="row g-4">
+//                       <div className="col-sm-6 col-md-4">
+//                         <span className="badge bg-dark text-white">
+//                           Current Month
+//                         </span>
+//                         <h4 className="text-primary my-2">
+//                           {statsLoading
+//                             ? '...'
+//                             : formatCurrency(dashboardStats.currentMonthEarning)}
+//                         </h4>
+//                         <p className="mb-0">
+//                           {hasEarningComparison ? (
+//                             <span
+//                               className={`me-1 ${
+//                                 earningPercentage >= 0
+//                                   ? 'text-success'
+//                                   : 'text-danger'
+//                               }`}
+//                             >
+//                               {Math.abs(earningPercentage).toFixed(2)}%
+//                               <i
+//                                 className={`bi ${
+//                                   earningPercentage >= 0
+//                                     ? 'bi-arrow-up'
+//                                     : 'bi-arrow-down'
+//                                 } ms-1`}
+//                               />
+//                             </span>
+//                           ) : (
+//                             <span className="text-muted me-1">--</span>
+//                           )}
+//                           vs last month
+//                         </p>
+//                       </div>
+
+//                       <div className="col-sm-6 col-md-4">
+//                         <span className="badge bg-dark text-white">
+//                           Last Month
+//                         </span>
+//                         <h4 className="my-2">
+//                           {statsLoading
+//                             ? '...'
+//                             : formatCurrency(dashboardStats.lastMonthEarning)}
+//                         </h4>
+//                         <p className="mb-0">Previous month earnings</p>
+//                       </div>
+
+//                       <div className="col-sm-6 col-md-4">
+//                         <span className="badge bg-dark text-white">
+//                           Instructor Rating
+//                         </span>
+//                         <h4 className="text-primary my-2">
+//                           {statsLoading
+//                             ? '...'
+//                             : dashboardStats.averageRating != null
+//                               ? `${Number(dashboardStats.averageRating).toFixed(1)}/5.0`
+//                               : 'No ratings'}
+//                         </h4>
+//                         <p className="mb-0">
+//                           {showCount(dashboardStats.totalReviews)} Reviews
+//                         </p>
+//                       </div>
+
+//                       <div className="col-sm-6 col-md-4">
+//                         <span className="badge bg-dark text-white">
+//                           Total Enrollments
+//                         </span>
+//                         <h4 className="my-2">
+//                           {showCount(dashboardStats.totalEnrollments)}
+//                         </h4>
+//                         <p className="mb-0">Across your courses</p>
+//                       </div>
+//                     </div>
+
+//                     <div id="ChartPayout" />
+//                   </div>
+//                 </div>
+//               </div>
+
+//               {/* Most Selling Courses */}
+//               <div className="row">
+//                 <div className="col-12">
+//                   <div className="card border rounded-3 mt-5">
+//                     <div className="card-header border-bottom">
+//                       <div className="d-sm-flex justify-content-sm-between align-items-center">
+//                         <h3 className="mb-2 mb-sm-0">
+//                           Most Selling Courses
+//                         </h3>
+
+//                         <button
+//                           type="button"
+//                           className="btn btn-sm btn-primary-soft mb-0"
+//                           onClick={() => navigate('/Instructor_Create_Course')}
+//                         >
+//                           View all
+//                         </button>
+//                       </div>
+//                     </div>
+
+//                     <div className="card-body">
+//                       <div className="table-responsive-lg border-0 rounded-3">
+//                         <table className="table table-dark-gray align-middle p-4 mb-0">
+//                           <thead>
+//                             <tr>
+//                               <th className="border-0 rounded-start">
+//                                 Course Name
+//                               </th>
+//                               <th className="border-0">Selling</th>
+//                               <th className="border-0">Amount</th>
+//                               <th className="border-0">Period</th>
+//                               <th className="border-0 rounded-end">Action</th>
+//                             </tr>
+//                           </thead>
+
+//                           <tbody>
+//                             {statsLoading ? (
+//                               <tr>
+//                                 <td colSpan="5" className="text-center py-4">
+//                                   Loading courses...
+//                                 </td>
+//                               </tr>
+//                             ) : statsError ? (
+//                               <tr>
+//                                 <td colSpan="5" className="text-center py-4">
+//                                   Course data load nahi hua.
+//                                 </td>
+//                               </tr>
+//                             ) : currentCourses.length > 0 ? (
+//                               currentCourses.map((course, index) => {
+//                                 const courseId = course._id || course.id;
+//                                 const courseName = course.name || 'Untitled Course';
+//                                 const selling = Number(course.totalSelling ?? course.totalEnrollments ?? 0);
+//                                 const amount = Number(
+//                                   course.totalAmount ?? course.fees ?? 0
+//                                 );
+
+//                                 return (
+//                                   <tr key={courseId || index}>
+//                                     <td>
+//                                       <div className="d-flex align-items-center">
+//                                         <div className="w-100px w-md-60px">
+//                                           <img
+//                                             src={getCourseImage(course)}
+//                                             className="rounded"
+//                                             alt={courseName}
+//                                             style={{
+//                                               width: '70px',
+//                                               height: '50px',
+//                                               objectFit: 'cover',
+//                                             }}
+//                                             onError={(event) => {
+//                                               event.currentTarget.src =
+//                                                 'assets/images/courses/4by3/08.jpg';
+//                                             }}
+//                                           />
+//                                         </div>
+//                                         <h6 className="mb-0 ms-2">
+//                                           {courseName}
+//                                         </h6>
+//                                       </div>
+//                                     </td>
+
+//                                     <td>{selling}</td>
+
+//                                     <td>{formatCurrency(amount)}</td>
+
+//                                     <td>
+//                                       <span className="badge bg-primary bg-opacity-10 text-primary">
+//                                         {course.duration || 'N/A'}
+//                                       </span>
+//                                     </td>
+
+//                                     <td>
+//                                       <button
+//                                         type="button"
+//                                         className="btn btn-sm btn-success-soft btn-round me-1 mb-0"
+//                                         title="Edit Course"
+//                                         onClick={() => handleEdit(courseId)}
+//                                       >
+//                                         <i className="far fa-fw fa-edit" />
+//                                       </button>
+
+//                                       <button
+//                                         type="button"
+//                                         className="btn btn-sm btn-danger-soft btn-round mb-0"
+//                                         title="Delete Course"
+//                                         onClick={() =>
+//                                           handleDelete(courseId, courseName)
+//                                         }
+//                                       >
+//                                         <i className="fas fa-fw fa-times" />
+//                                       </button>
+//                                     </td>
+//                                   </tr>
+//                                 );
+//                               })
+//                             ) : (
+//                               <tr>
+//                                 <td colSpan="5" className="text-center py-4">
+//                                   No enrolled courses yet.
+//                                 </td>
+//                               </tr>
+//                             )}
+//                           </tbody>
+//                         </table>
+//                       </div>
+
+//                       {/* Entries and Pagination */}
+//                       <div className="d-sm-flex justify-content-sm-between align-items-sm-center mt-3">
+//                         <p className="mb-0 text-center text-sm-start">
+//                           Showing {totalEntries === 0 ? 0 : startIndex + 1} to{' '}
+//                           {endIndex} of {totalEntries} entries
+//                         </p>
+
+//                         <nav
+//                           className="d-flex justify-content-center mb-0"
+//                           aria-label="Course pagination"
+//                         >
+//                           <ul className="pagination pagination-sm pagination-primary-soft mb-0 pb-0">
+//                             <li
+//                               className={`page-item mb-0 ${
+//                                 currentPage === 1 ? 'disabled' : ''
+//                               }`}
+//                             >
+//                               <button
+//                                 type="button"
+//                                 className="page-link"
+//                                 disabled={currentPage === 1}
+//                                 onClick={() =>
+//                                   handlePageChange(currentPage - 1)
+//                                 }
+//                               >
+//                                 <i className="fas fa-angle-left" />
+//                               </button>
+//                             </li>
+
+//                             {pageNumbers.map((page) => (
+//                               <li
+//                                 key={page}
+//                                 className={`page-item mb-0 ${
+//                                   currentPage === page ? 'active' : ''
+//                                 }`}
+//                               >
+//                                 <button
+//                                   type="button"
+//                                   className="page-link"
+//                                   onClick={() => handlePageChange(page)}
+//                                 >
+//                                   {page}
+//                                 </button>
+//                               </li>
+//                             ))}
+
+//                             <li
+//                               className={`page-item mb-0 ${
+//                                 currentPage === totalPages ? 'disabled' : ''
+//                               }`}
+//                             >
+//                               <button
+//                                 type="button"
+//                                 className="page-link"
+//                                 disabled={currentPage === totalPages}
+//                                 onClick={() =>
+//                                   handlePageChange(currentPage + 1)
+//                                 }
+//                               >
+//                                 <i className="fas fa-angle-right" />
+//                               </button>
+//                             </li>
+//                           </ul>
+//                         </nav>
+//                       </div>
+//                     </div>
+//                   </div>
+//                 </div>
+//               </div>
+//               {/* Most Selling Courses END */}
+//             </div>
+//           </div>
+//         </div>
+//       </section>
+//     </main>
+//   );
+// }
+
+// export default InstructorDashboard;
 
 
 

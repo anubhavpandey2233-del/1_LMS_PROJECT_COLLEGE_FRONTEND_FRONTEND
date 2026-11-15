@@ -1,16 +1,27 @@
-
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { editProfile } from "../../redux/slice/auth.slice";
 import { setalert } from "../../redux/slice/alert.slice";
+
 import UserHeader from "./componets/UserHeader";
 import UserSildeBar from "./componets/UserSildeBar";
+
+import InstructorHeader from "../InstructorDashboard/components/InstructorHeader";
+import InstructorSidebar from "../InstructorDashboard/components/InstructorSidebar";
 
 function UserEditProfile() {
   const dispatch = useDispatch();
 
   const auth = useSelector((state) => state.auth);
-  const user = auth?.user?.data;
+  const user = auth?.user?.data || auth?.user || {};
+
+const userRole = String(user?.role || "").toLowerCase();
+
+const isAdminOrInstructor =
+  userRole === "admin" || userRole === "instructor";
+
+
+
 
   const [profileData, setProfileData] = useState({
     fullName: "",
@@ -109,7 +120,11 @@ function UserEditProfile() {
         {/* =======================
             Instructor Header START
         ======================= */}
-       <UserHeader />
+      {isAdminOrInstructor ? (
+  <InstructorHeader />
+) : (
+  <UserHeader />
+)}
         {/* =======================
             Instructor Header END
         ======================= */}
@@ -124,7 +139,11 @@ function UserEditProfile() {
               {/* =======================
                   Instructor Sidebar START
               ======================= */}
-              <UserSildeBar />
+              {isAdminOrInstructor ? (
+  <InstructorSidebar />
+) : (
+  <UserSildeBar />
+)}
               {/* =======================
                   Instructor Sidebar END
               ======================= */}
